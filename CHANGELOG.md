@@ -7,17 +7,45 @@ All notable changes to `dataenginex` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - 2026-07-20
+## [0.5.1] - 2026-07-27
 
 ### Changed
 
-- **Major dependency upgrades across the ecosystem:**
-- All tests pass (1250 passed, 35 skipped)
-- Coverage maintained at 83%
+- Version bumped to 0.5.1
+- Minor dependency updates and bug fixes
 
-### Fixed
+## [0.5.0] - 2026-07-07
 
-- Mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
+### Added
+
+- `core/project_plugins.py` — project-local plugin loader for dex.yaml `plugins:` block
+- `data/connectors/kafka.py` — KafkaConnector with produce + consume support (core dep)
+- `orchestration/queue/rabbitmq.py` — RabbitMQ queue backend (core dep)
+- `ai/retrieval/graph.py` — graph-based retrieval for structured knowledge graphs
+- `ai/lexical_search.py` — LexicalSearchBackend ABC + ElasticsearchBackend (core dep)
+- `api/graphql.py` — GraphQL schema-mount mechanism via strawberry-graphql (core dep)
+- `data/transforms/sql.py` — ExplodeTransform for unnesting nested JSON/struct columns
+- `orm/` — SQLAlchemy ORM models and session management (core dep)
+- `ai/workflows/` — workflow DAG, condition nodes, human-in-the-loop support
+- `ai/runtime/` — checkpointing, code executor, sandboxed execution
+- `ai/memory/` — episodic and long-term memory backends
+- `ai/tools/builtin.py` — built-in agent tools (sql_query, web_search, file_read, python_exec, vector_search)
+
+### Changed
+
+- Version bumped to 0.5.0
+- Config schema extended: `plugins:`, `ai.workflows:`, `ai.memory:`, `ai.runtime:`, `ai.tools:` blocks
+- Promoted to core deps: confluent-kafka, pika, elasticsearch, strawberry-graphql, sqlalchemy
+- `data/connectors/` — KafkaConnector added alongside existing CSV/Parquet/DuckDB/REST/SSE/HTTP
+- `orchestration/` — queue subpackage with RabbitMQ backend
+- `ai/` — lexical search, graph retrieval, workflow orchestration, memory, tools, runtime submodules
+
+### Removed
+
+- Legacy `worker.py` module — background worker functionality superseded by orchestration/scheduler + queue backends
+- `dataenginex.observability` — metrics/logging moved to `dataenginex.middleware`; tracing moved to ai observability
+
+______________________________________________________________________
 
 ## [0.4.2] - 2026-06-23
 
@@ -94,6 +122,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cursor-based pagination utilities
 - Versioned API router (`/api/v1/`)
 
+______________________________________________________________________
+
 [0.3.5]: https://github.com/TheDataEngineX/dataenginex/releases/tag/v0.3.5
 [0.4.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.3.5...v0.4.0
 [0.4.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.0...v0.4.1
+[0.4.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.1...v0.4.2
+[0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0
+[0.5.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.0...v0.5.1

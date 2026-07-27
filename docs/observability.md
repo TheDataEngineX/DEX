@@ -1,4 +1,4 @@
-# Observability: Metrics, Logging & Tracing
+# Observability: Metrics & Logging
 
 **Library-level observability for `dataenginex`.** For application-level monitoring (HTTP middleware, health endpoints, Grafana dashboards), see [dex-studio/docs/observability.md](https://github.com/TheDataEngineX/dex-studio/blob/main/docs/observability.md).
 
@@ -21,14 +21,10 @@ engine = DexEngine("dex.yaml")
 
 ## Metrics
 
-Prometheus metrics are exposed via `dataenginex.middleware.metrics`:
+Prometheus metrics are exposed via `dataenginex.middleware`:
 
 ```python
-from dataenginex.middleware.metrics import (
-    HTTP_REQUESTS_TOTAL,
-    HTTP_REQUEST_DURATION_SECONDS,
-    PIPELINE_RUN_DURATION,
-)
+from dataenginex.middleware import get_metrics
 ```
 
 ### Available library-level metrics
@@ -39,23 +35,3 @@ from dataenginex.middleware.metrics import (
 | `model_prediction_latency_seconds` | Histogram | Model inference time | model_name |
 | `llm_request_duration_seconds` | Histogram | LLM call time | provider, model |
 | `data_connector_rows_read` | Counter | Rows read by source connectors | connector_type |
-
-## Tracing
-
-OpenTelemetry tracing is available via `dataenginex.tracing`:
-
-```python
-from dataenginex.tracing import get_tracer
-
-tracer = get_tracer(__name__)
-
-with tracer.start_as_current_span("pipeline_run") as span:
-    span.set_attribute("pipeline.name", "ingest")
-    engine.run_pipeline("ingest")
-```
-
-Enable OTLP export:
-
-```bash
-export OTLP_ENDPOINT="http://localhost:4317"
-```

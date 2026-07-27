@@ -136,4 +136,4 @@ Architecture changes are proposed via issues and PRs.
 
 ---
 
-*Architecture version: 0.5.x | Updated: 2026-07-20*
+*Architecture version: 0.5.1 | Updated: 2026-07-27*

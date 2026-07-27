@@ -638,7 +638,7 @@ graph TD
 
 **Test status (0.5.x):**
 - 1250 passed, 35 skipped
-- Coverage: 84% (optional deps excluded)
+- Coverage: ~83% (optional deps excluded)
 - `mypy --strict`: clean
 - `ruff`: clean
 
@@ -711,4 +711,4 @@ Place any `plugins/*.py` in your project root — `DexEngine` loads them before 
 
 ---
 
-*Architecture version: 0.5.x | Updated: 2026-07-20*
+*Architecture version: 0.5.1 | Updated: 2026-07-27*

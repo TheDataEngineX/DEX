@@ -1,16 +1,15 @@
 # dataenginex.core
 
-Foundation layer — interfaces, medallion architecture, quality gates, registries, exceptions, and shared schemas.
+Foundation layer — medallion architecture, quality gates, registries, exceptions, and shared schemas.
 
 ## Quick import
 
 ```python
 from dataenginex.core import (
-    MedallionConfig, Layer,
-    QualityGate, QualityCheck, QualityResult, Severity,
-    BaseConnector, BaseTransform, BaseRunner,
-    NotFoundError, ValidationError, PipelineError,
-    ComponentRegistry,
+    MedallionArchitecture, DataLayer, LayerConfiguration,
+    QualityGate, QualityResult, QualityDimension,
+    BackendRegistry,
+    DataEngineXError, PipelineError, ConfigError,
 )
 ```
 
@@ -24,15 +23,15 @@ Defines the Bronze → Silver → Gold layer model and per-layer configuration.
 
 ::: dataenginex.core.medallion_architecture
 
-**Key classes:** `MedallionConfig`, `Layer`, `LayerConfig`, `MedallionPipeline`
+**Key classes:** `MedallionArchitecture`, `DataLayer`, `LayerConfiguration`
 
 ```python
-from dataenginex.core.medallion_architecture import Layer, MedallionConfig, LayerConfig
+from dataenginex.core.medallion_architecture import MedallionArchitecture, DataLayer, LayerConfiguration
 
-cfg = MedallionConfig(
-    bronze=LayerConfig(path="data/bronze"),
-    silver=LayerConfig(path="data/silver", quality_threshold=0.95),
-    gold=LayerConfig(path="data/gold", quality_threshold=0.99),
+arch = MedallionArchitecture(
+    bronze=LayerConfiguration(path="data/bronze"),
+    silver=LayerConfiguration(path="data/silver", quality_threshold=0.95),
+    gold=LayerConfiguration(path="data/gold", quality_threshold=0.99),
 )
 ```
 
@@ -46,21 +45,15 @@ Declarative data quality checks that run at layer promotion boundaries.
 
 ::: dataenginex.core.quality
 
-**Key classes:** `QualityCheck`, `QualityGate`, `QualityResult`, `Severity`
+**Key classes:** `QualityGate`, `QualityResult`, `QualityDimension`
 
 ```python
-from dataenginex.core.quality import QualityCheck, QualityGate, Severity
+from dataenginex.core.quality import QualityGate, QualityDimension
 
 gate = QualityGate(
-    checks=[
-        QualityCheck(name="no_nulls", column="user_id", check_type="not_null"),
-        QualityCheck(
-            name="email_format",
-            column="email",
-            check_type="regex",
-            pattern=r"^[^@]+@[^@]+\.[^@]+$",
-            severity=Severity.ERROR,
-        ),
+    dimensions=[
+        QualityDimension.COMPLETENESS,
+        QualityDimension.UNIQUENESS,
     ]
 )
 result = gate.run(df)
@@ -73,11 +66,11 @@ ______________________________________________________________________
 
 `dataenginex.core.interfaces`
 
-Abstract base classes for connectors, transforms, runners, and storage backends. Implement these to extend DEX with custom components.
+Abstract base classes for connectors, transforms, and storage backends. Implement these to extend DEX with custom components.
 
 ::: dataenginex.core.interfaces
 
-**Key classes:** `BaseConnector`, `BaseTransform`, `BaseRunner`, `BaseStorage`, `BaseProfiler`
+**Key classes:** `BaseConnector`, `BaseTransform`, `BaseTracker`, `BaseVectorStore`, `BaseLLMProvider`
 
 ______________________________________________________________________
 
@@ -89,12 +82,12 @@ Generic component registry used by connectors, transforms, models, and agents.
 
 ::: dataenginex.core.registry
 
-**Key class:** `ComponentRegistry`
+**Key class:** `BackendRegistry`
 
 ```python
-from dataenginex.core.registry import ComponentRegistry
+from dataenginex.core.registry import BackendRegistry
 
-registry: ComponentRegistry[MyPlugin] = ComponentRegistry()
+registry: BackendRegistry[MyPlugin] = BackendRegistry("my_plugin")
 registry.register("my_plugin", MyPlugin)
 plugin = registry.get("my_plugin")
 ```
@@ -131,13 +124,13 @@ Typed exception hierarchy for pipeline, validation, and resource errors.
 
 ::: dataenginex.core.exceptions
 
-**Key exceptions:** `DexError`, `NotFoundError`, `ValidationError`, `PipelineError`, `RegistryError`, `ConfigError`
+**Key exceptions:** `DataEngineXError`, `ConfigError`, `PipelineError`, `RegistryError`
 
 ```python
-from dataenginex.core.exceptions import NotFoundError, PipelineError
+from dataenginex.core.exceptions import PipelineError
 
 try:
     engine.run_pipeline("missing")
-except NotFoundError as e:
-    print(e.detail)
+except PipelineError as e:
+    print(e)
 ```

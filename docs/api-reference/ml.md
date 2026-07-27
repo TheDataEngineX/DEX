@@ -120,7 +120,7 @@ ______________________________________________________________________
 
 `dataenginex.ml.serving_engine.builtin`
 
-Built-in serving engine wrapping `ModelServer` for `BaseServingEngine` compliance. Local-first, zero external dependencies. Swap in BentoML via `dataenginex[bentoml]` for production scale.
+Built-in serving engine wrapping `ModelServer` for `BaseServingEngine` compliance. Local-first, zero external dependencies.
 
 ::: dataenginex.ml.serving_engine.builtin
 
@@ -130,7 +130,7 @@ ______________________________________________________________________
 
 `dataenginex.ml.tracking.builtin`
 
-Built-in JSON-backed experiment tracker. Stores experiments and runs locally — no external services required. Use MLflow via `dataenginex[mlflow]` for production.
+Built-in JSON-backed experiment tracker. Stores experiments and runs locally — no external services required. Use MLflow via `dataenginex[tracking]` for production.
 
 ::: dataenginex.ml.tracking.builtin
 
@@ -150,7 +150,7 @@ ______________________________________________________________________
 
 `dataenginex.ml.features.builtin`
 
-Built-in DuckDB-backed feature store. Stores feature groups as DuckDB tables. Use Feast via `dataenginex[feast]` for production-scale feature serving.
+Built-in DuckDB-backed feature store. Stores feature groups as DuckDB tables.
 
 ::: dataenginex.ml.features.builtin
 

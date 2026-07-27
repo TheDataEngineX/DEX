@@ -1,5 +1,29 @@
 # Release Notes
 
+## [0.5.1] - 2026-07-27
+
+### Changed
+
+- Version bumped to 0.5.1
+- Minor dependency updates and bug fixes
+
+______________________________________________________________________
+
+## [0.5.1] — 2026-07-20
+
+### Changed
+
+- **Major dependency upgrades across the ecosystem:**
+- All tests pass (1250 passed, 35 skipped)
+- Coverage maintained at 83%
+- mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
+
+### Fixed
+
+- Mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
+
+______________________________________________________________________
+
 ## [0.5.0] — 2026-07-07
 
 ### Added
@@ -128,5 +152,8 @@ ______________________________________________________________________
 [0.3.5]: https://github.com/TheDataEngineX/dataenginex/releases/tag/v0.3.5
 [0.4.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.3.5...v0.4.0
 [0.4.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.0...v0.4.1
+[0.4.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.1...v0.4.2
+[0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0
+[0.5.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.0...v0.5.1
 [0.4.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.1...v0.4.2
 [0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0

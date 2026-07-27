@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-**Version**: `0.5.0` | see `pyproject.toml`
+**Version**: `0.5.1` | see `pyproject.toml`
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ uv run poe setup
 
 # 3. Verify setup
 uv run poe check-all
-uv run poe test-cov  # Coverage check: requires 80%+ (currently 81%)
+uv run poe test-cov  # Coverage check: requires 80%+ (currently ~83%)
 ```
 
 All tests and linting should pass. You're ready to develop!
@@ -119,7 +119,7 @@ mkdir -p ~/data/dex/{bronze,silver,gold}
 
 ### Optional Dependencies for Full Coverage
 
-To achieve the 81% code coverage, optional dependencies must be installed:
+To achieve the ~83% code coverage, optional dependencies must be installed:
 
 ```bash
 # Required for full test coverage:
@@ -181,7 +181,7 @@ uv run poe check-all
 
 ### Coverage Strategy
 
-**Current Status**: 81% (meets 80% threshold)
+**Current Status**: ~83% (meets 80% threshold)
 
 **What was omitted from coverage**: Optional dependency files to keep CI fast and focused:
 

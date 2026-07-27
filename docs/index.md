@@ -1,6 +1,6 @@
 # DataEngineX Documentation
 
-**The Python library (PyPI) — engine, config, CLI, pipelines, ML, AI, PrivacyGuard.**
+**The Python library (PyPI) — engine, config, CLI, pipelines, ML, AI, PrivacyGuard.**  **Version: 0.5.1**
 
 Documentation for the core `dataenginex` library. For the web UI, see [dex-studio](https://github.com/TheDataEngineX/dex-studio).
 

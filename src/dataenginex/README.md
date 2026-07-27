@@ -1,8 +1,8 @@
 # dataenginex
 
-The Python library that powers [DEX Studio](https://github.com/TheDataEngineX/dex-studio) — an open-source, self-hosted, local-first Data + ML + AI workbench. Use the library directly when you want code, not a UI.
+The Python library that powers [DataEngineX Studio](https://github.com/TheDataEngineX/dex-studio) — an open-source, self-hosted, local-first Data + ML + AI workbench. Use the library directly when you want code; install DataEngineX Studio when you want a UI.
 
-> **Pre-1.0 status.** `0.4.0` is honest about that. See the [scope reset CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for the rationale.
+> **Pre-1.0 status.** `0.5.1` is honest about that. See the [CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for details.
 
 ## Install
 
@@ -17,9 +17,8 @@ pip install 'dataenginex[postgres]'        # asyncpg-backed lineage, persistence
 pip install 'dataenginex[qdrant]'          # Qdrant vector store backend
 pip install 'dataenginex[queue]'           # ARQ async job queue (pulls redis)
 pip install 'dataenginex[cloud]'           # S3, GCS, BigQuery storage backends
-pip install 'dataenginex[ml]'              # scikit-learn, xgboost, sentence-transformers
-pip install 'dataenginex[tracking]'        # MLflow integration
-pip install 'dataenginex[data]'            # PySpark, databricks-cli
+pip install 'dataenginex[delta]'           # Delta Lake connector
+pip install 'dataenginex[pytorch]'         # PyTorch ML models
 ```
 
 > **LiteLLM:** install separately — it pins `python-dotenv==1.0.1` which conflicts with our `>=1.2.2`:

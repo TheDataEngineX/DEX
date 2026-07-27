@@ -25,7 +25,7 @@ from importlib.metadata import PackageNotFoundError, version
 try:
     __version__ = version("dataenginex")
 except PackageNotFoundError:
-    __version__ = "0.4.2"
+    __version__ = "0.5.1"
 
 # Primary entry point
 # AI (LLM / agents / RAG)
