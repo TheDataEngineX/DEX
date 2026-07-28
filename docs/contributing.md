@@ -37,7 +37,7 @@ Use semantic commit format:
    uv run poe test        # Run tests
    ```
 
-1. Tests must pass with 80%+ coverage for new code
+1. Tests must pass with 85%+ coverage for new code
 
 1. Update documentation if needed
 
@@ -55,7 +55,7 @@ Use semantic commit format:
 
 - Add unit tests for new code
 - Test error scenarios
-- Target 80%+ coverage: `uv run poe test-cov`
+- Target 85%+ coverage: `uv run poe test-cov` (currently 1476 tests, 85%)
 
 ## Documentation
 

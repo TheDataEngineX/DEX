@@ -1,6 +1,6 @@
 [project]
 name = "dataenginex"
-version = "0.5.1"
+version = "0.5.2"
 description = "DataEngineX — open-source, self-hosted, local-first Data + ML + AI workbench library"
 authors = [{ name = "Jay", email = "jayapal.myaka99@gmail.com" }]
 readme = "src/dataenginex/README.md"

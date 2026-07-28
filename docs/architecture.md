@@ -637,8 +637,8 @@ graph TD
 | **structlog** | 26.1+ | 3.13+ |
 
 **Test status (0.5.x):**
-- 1250 passed, 35 skipped
-- Coverage: ~79% (optional deps excluded)
+- 1476 passed, 41 skipped
+- Coverage: 85% (optional deps excluded)
 - `mypy --strict`: clean
 - `ruff`: clean
 
@@ -711,4 +711,4 @@ Place any `plugins/*.py` in your project root — `DexEngine` loads them before 
 
 ---
 
-*Architecture version: 0.5.1 | Updated: 2026-07-27*
+*Architecture version: 0.5.2 | Updated: 2026-07-28*

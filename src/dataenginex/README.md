@@ -2,7 +2,7 @@
 
 The Python library that powers [DataEngineX Studio](https://github.com/TheDataEngineX/dex-studio) — an open-source, self-hosted, local-first Data + ML + AI workbench. Use the library directly when you want code; install DataEngineX Studio when you want a UI.
 
-> **Pre-1.0 status.** `0.5.1` is honest about that. See the [CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for details.
+> **Pre-1.0 status.** `0.5.2` is honest about that. See the [CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for details.
 
 ## Install
 

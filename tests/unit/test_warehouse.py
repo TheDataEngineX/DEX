@@ -157,3 +157,149 @@ class TestPersistentLineage:
         # Reload
         lin2 = PersistentLineage(path)
         assert len(lin2.all_events) == 1
+
+    def test_get_children(self) -> None:
+        lin = PersistentLineage()
+        e1 = lin.record(operation="ingest", layer="bronze")
+        lin.record(operation="transform", layer="silver", parent_id=e1.event_id)
+        lin.record(operation="transform", layer="silver", parent_id=e1.event_id)
+        children = lin.get_children(e1.event_id)
+        assert len(children) == 2
+
+    def test_get_by_pipeline(self) -> None:
+        lin = PersistentLineage()
+        lin.record(operation="ingest", layer="bronze", pipeline_name="p1")
+        lin.record(operation="ingest", layer="bronze", pipeline_name="p2")
+        lin.record(operation="ingest", layer="bronze", pipeline_name="p1")
+        assert len(lin.get_by_pipeline("p1")) == 2
+
+    def test_all_events_property(self) -> None:
+        lin = PersistentLineage()
+        lin.record(operation="ingest", layer="bronze")
+        events = lin.all_events
+        assert len(events) == 1
+        events.append("junk")
+        assert len(lin.all_events) == 1
+
+    def test_load_corrupted_file(self, tmp_path: Path) -> None:
+        path = tmp_path / "bad.json"
+        path.write_text("NOT VALID JSON {{{")
+        lin = PersistentLineage(path)
+        assert len(lin.all_events) == 0
+
+    def test_to_dict_event(self) -> None:
+        from dataenginex.warehouse.lineage import LineageEvent
+
+        ev = LineageEvent(operation="test", layer="bronze")
+        d = ev.to_dict()
+        assert d["operation"] == "test"
+        assert "timestamp" in d
+        assert isinstance(d["timestamp"], str)
+
+    def test_event_default_fields(self) -> None:
+        from dataenginex.warehouse.lineage import LineageEvent
+
+        ev = LineageEvent()
+        assert ev.event_id
+        assert ev.parent_id is None
+        assert ev.input_count == 0
+        assert ev.quality_score is None
+
+
+class TestPostgresLineageFallback:
+    def test_fallback_to_json_when_asyncpg_missing(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        fallback = tmp_path / "fallback.json"
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=fallback)
+        assert pg._pg_ok is False
+        ev = pg.record(operation="test", layer="bronze", source="s")
+        assert ev.operation == "test"
+        assert len(pg.all_events) == 1
+
+    def test_fallback_get_event(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        ev = pg.record(operation="ingest", layer="bronze")
+        assert pg.get_event(ev.event_id) is not None
+
+    def test_fallback_get_children(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        e1 = pg.record(operation="ingest", layer="bronze")
+        pg.record(operation="transform", layer="silver", parent_id=e1.event_id)
+        assert len(pg.get_children(e1.event_id)) == 1
+
+    def test_fallback_get_chain(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        e1 = pg.record(operation="ingest", layer="bronze")
+        e2 = pg.record(operation="transform", layer="silver", parent_id=e1.event_id)
+        chain = pg.get_chain(e2.event_id)
+        assert len(chain) == 2
+
+    def test_fallback_get_by_layer(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        pg.record(operation="ingest", layer="bronze")
+        pg.record(operation="transform", layer="silver")
+        assert len(pg.get_by_layer("bronze")) == 1
+
+    def test_fallback_get_by_pipeline(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        pg.record(operation="ingest", layer="bronze", pipeline_name="p1")
+        pg.record(operation="ingest", layer="bronze", pipeline_name="p2")
+        assert len(pg.get_by_pipeline("p1")) == 1
+
+    def test_fallback_all_events(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        pg.record(operation="ingest", layer="bronze")
+        assert len(pg.all_events) == 1
+
+    def test_fallback_summary(self, tmp_path: Path) -> None:
+        import warnings
+
+        from dataenginex.warehouse.lineage import PostgresLineage
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            pg = PostgresLineage(dsn="postgresql://invalid", fallback_path=tmp_path / "f.json")
+        pg.record(operation="ingest", layer="bronze")
+        s = pg.summary()
+        assert s["total_events"] == 1

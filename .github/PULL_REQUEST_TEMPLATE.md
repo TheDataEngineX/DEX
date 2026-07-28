@@ -44,7 +44,7 @@ chore: establish org/domain foundation (pages, labels, project automation)
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
 - [ ] Tests pass locally (`uv run poe test`)
-- [ ] Coverage maintained/improved (target: 80%+)
+- [ ] Coverage maintained/improved (target: 85%+, currently 1476 tests)
 
 ## Architecture Impact
 

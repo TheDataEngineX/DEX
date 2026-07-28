@@ -50,6 +50,13 @@ End-to-end templates showing multiple features together.
 - **ShopMetrics** (`ecommerce/`) — Synthetic e-commerce. Customer churn ML, product RAG, medallion architecture.
   `uv run python examples/ecommerce/run_all.py`
 
+## Running Tests
+
+```bash
+uv run poe check-all    # lint + typecheck + tests (1476 passed, 85% coverage)
+uv run poe test-cov     # tests with coverage report
+```
+
 ## Prerequisites
 
 - Python ≥ 3.13

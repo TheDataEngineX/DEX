@@ -35,3 +35,7 @@ from dataenginex.middleware import get_metrics
 | `model_prediction_latency_seconds` | Histogram | Model inference time | model_name |
 | `llm_request_duration_seconds` | Histogram | LLM call time | provider, model |
 | `data_connector_rows_read` | Counter | Rows read by source connectors | connector_type |
+
+### Integration with dex-studio
+
+dex-studio exposes these metrics via FastAPI middleware and `/metrics` endpoint. See [dex-studio observability docs](https://github.com/TheDataEngineX/dex-studio/blob/main/docs/observability.md) for Grafana dashboards and alerting.

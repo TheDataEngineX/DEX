@@ -50,7 +50,7 @@ uv run mypy src/dataenginex/ --strict
 uv run pytest tests/ -x --tb=short --cov=src/dataenginex/
 ```
 
-Coverage threshold: 80%.
+Coverage threshold: 85% (1476+ tests).
 
 ### 3. Package validation
 

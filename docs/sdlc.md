@@ -1,6 +1,6 @@
 # SDLC Overview
 
-**Software Development Lifecycle for DataEngineX - stages, artifacts, and quality gates.**
+**Software Development Lifecycle for DataEngineX — stages, artifacts, and quality gates.**
 
 > **Quick Links:** [Lifecycle Stages](#lifecycle-stages) · [Development Workflow](#development-workflow-summary) · [Quality Gates](#4-verify-ci)
 

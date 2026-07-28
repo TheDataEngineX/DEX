@@ -94,7 +94,7 @@ uv run poe typecheck  # mypy strict
 uv run poe check-all  # All of the above
 ```
 
-**Coverage Note:** The test suite achieves ~79% code coverage. Connectors requiring external dependencies (HTTP, REST, SSE, Delta Lake, MLflow, ML registry, PySpark Spark, Parquet, CSV, PostgreSQL, Qdrant, etc.) are excluded from coverage calculations as they require optional package installation and cloud credential setup.
+**Coverage Note:** The test suite achieves 85% code coverage (1476 tests passed, 41 skipped). Connectors requiring external dependencies (HTTP, REST, SSE, Delta Lake, MLflow, ML registry, PySpark, Parquet, CSV, PostgreSQL, Qdrant, etc.) are excluded from coverage calculations as they require optional package installation and cloud credential setup.
 
 ## Spark and dbt sources
 

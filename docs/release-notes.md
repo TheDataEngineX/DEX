@@ -1,28 +1,29 @@
 # Release Notes
 
-## [0.5.1] - 2026-07-27
+## [0.5.2] — 2026-07-28
+
+### Added
+
+- 20 new test modules: engine CRUD, ML training/registry/serving, lineage persistence, AI tools, vector store, LLM providers, circuit breaker, retry, JSON helpers
+- Test coverage raised from ~64% to 85% (1476 passed, 41 skipped, 7843 statements)
+- Coverage threshold updated from 80% to 85% in `poe_tasks.toml`
+
+### Changed
+
+- Version bumped to 0.5.2
+- `sentence-transformers` 5.x mock fix in `test_ml_finetune.py`
+- Documentation updated across all guides to reflect current architecture and test stats
+
+---
+
+## [0.5.1] — 2026-07-27
 
 ### Changed
 
 - Version bumped to 0.5.1
 - Minor dependency updates and bug fixes
 
-______________________________________________________________________
-
-## [0.5.1] — 2026-07-20
-
-### Changed
-
-- **Major dependency upgrades across the ecosystem:**
-- All tests pass (1250 passed, 35 skipped)
-- Coverage maintained at ~79%
-- mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
-
-### Fixed
-
-- Mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
-
-______________________________________________________________________
+---
 
 ## [0.5.0] — 2026-07-07
 
@@ -155,5 +156,4 @@ ______________________________________________________________________
 [0.4.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.1...v0.4.2
 [0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0
 [0.5.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.0...v0.5.1
-[0.4.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.1...v0.4.2
-[0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0
+[0.5.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.1...v0.5.2

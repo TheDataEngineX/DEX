@@ -9,7 +9,7 @@ DataEngineX uses a multi-layered security scanning pipeline across CI/CD workflo
 | **Trivy** | Repository misconfiguration & secret scanning | `security.yml` |
 | **CodeQL** | Static analysis (Python + GitHub Actions) | `security.yml` |
 | **pip-audit** | Python dependency vulnerability audit | `poe security` |
-| **CycloneDX** | SBOM generation (attached to releases) | `release-*.yml` |
+| **CycloneDX** | SBOM generation (attached to releases) | `release.yml` |
 | **Renovate** | Automated dependency updates | `renovate.json` |
 
 ## How It Works
@@ -44,3 +44,14 @@ uv run poe security    # Run pip-audit against installed dependencies
 1. **MEDIUM / LOW vulnerabilities** — triage in the next sprint. Document accepted risks.
 1. **SBOM distribution** — share the CycloneDX JSON with downstream consumers for supply-chain transparency.
 1. **Dependabot PRs** — review and merge promptly; they appear as standard pull requests.
+
+## PrivacyGuard (Runtime PII Protection)
+
+In addition to CI scanning, DataEngineX includes **PrivacyGuard** — a runtime security primitive that intercepts every outbound LLM call:
+
+- **PII detection** — regex + NER models identify sensitive data (emails, SSNs, credit cards, etc.)
+- **Masking strategies** — mask, redact, hash, or allow per entity type
+- **Audit log** — every outbound call is recorded with PII types and actions taken
+- **Zero-config** — enabled by default in `dex.yaml` under `secops.guard`
+
+See [Architecture → Security](architecture.md#security--privacyguard) for details.
