@@ -638,7 +638,7 @@ graph TD
 
 **Test status (0.5.x):**
 - 1250 passed, 35 skipped
-- Coverage: ~83% (optional deps excluded)
+- Coverage: ~79% (optional deps excluded)
 - `mypy --strict`: clean
 - `ruff`: clean
 

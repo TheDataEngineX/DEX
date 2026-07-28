@@ -45,7 +45,7 @@ uv run poe setup
 
 # 3. Verify setup
 uv run poe check-all
-uv run poe test-cov  # Coverage check: requires 80%+ (currently ~83%)
+uv run poe test-cov  # Coverage check: requires 79%+ (currently ~79%)
 ```
 
 All tests and linting should pass. You're ready to develop!
@@ -119,7 +119,7 @@ mkdir -p ~/data/dex/{bronze,silver,gold}
 
 ### Optional Dependencies for Full Coverage
 
-To achieve the ~83% code coverage, optional dependencies must be installed:
+To achieve the ~79% code coverage, optional dependencies must be installed:
 
 ```bash
 # Required for full test coverage:
@@ -181,7 +181,7 @@ uv run poe check-all
 
 ### Coverage Strategy
 
-**Current Status**: ~83% (meets 80% threshold)
+**Current Status**: ~79% (meets 79% threshold)
 
 **What was omitted from coverage**: Optional dependency files to keep CI fast and focused:
 

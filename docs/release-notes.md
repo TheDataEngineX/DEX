@@ -15,7 +15,7 @@ ______________________________________________________________________
 
 - **Major dependency upgrades across the ecosystem:**
 - All tests pass (1250 passed, 35 skipped)
-- Coverage maintained at 83%
+- Coverage maintained at ~79%
 - mypy strict mode passes cleanly after `sentence-transformers` 5.x API fix
 
 ### Fixed

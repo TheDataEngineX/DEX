@@ -54,6 +54,7 @@ Smaller surfaces — use only what you need:
 
 ```python
 from dataenginex.config import load_config
+
 cfg = load_config("dex.yaml")
 
 from dataenginex.core.interfaces import BaseConnector

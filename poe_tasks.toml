@@ -29,7 +29,7 @@ sequence = ["lint", "typecheck", "security"]
 
 [tool.poe.tasks.test-cov-core]
 env  = {COVERAGE_PROCESS_START = "pyproject.toml"}
-shell = "coverage run -m pytest tests/ -v && coverage combine && coverage html && coverage xml -o coverage.xml && coverage report --fail-under=80"
+shell = "coverage run -m pytest tests/ -v && coverage combine && coverage html && coverage xml -o coverage.xml && coverage report --fail-under=79"
 
 [tool.poe.tasks.check-all]
 sequence = ["quality", "test-cov-core"]

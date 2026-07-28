@@ -73,10 +73,13 @@ def mock_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> None:
     st_mod.InputExample = _FakeInputExample  # type: ignore[attr-defined]
     st_mod.util = _FakeUtil()  # type: ignore[attr-defined]
 
-    losses_mod = types.ModuleType("sentence_transformers.losses")
+    losses_mod = types.ModuleType("sentence_transformers.sentence_transformer.losses")
     losses_mod.ContrastiveLoss = _FakeLoss  # type: ignore[attr-defined]
     losses_mod.CosineSimilarityLoss = _FakeLoss  # type: ignore[attr-defined]
-    st_mod.losses = losses_mod  # type: ignore[attr-defined]
+
+    st_submod = types.ModuleType("sentence_transformers.sentence_transformer")
+    st_submod.losses = losses_mod  # type: ignore[attr-defined]
+    st_mod.sentence_transformer = st_submod  # type: ignore[attr-defined]
 
     torch_mod = types.ModuleType("torch")
     torch_utils_mod = types.ModuleType("torch.utils")
@@ -86,7 +89,16 @@ def mock_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> None:
     torch_mod.utils = torch_utils_mod  # type: ignore[attr-defined]
 
     monkeypatch.setitem(sys.modules, "sentence_transformers", st_mod)
-    monkeypatch.setitem(sys.modules, "sentence_transformers.losses", losses_mod)
+    monkeypatch.setitem(
+        sys.modules,
+        "sentence_transformers.sentence_transformer",
+        st_submod,
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "sentence_transformers.sentence_transformer.losses",
+        losses_mod,
+    )
     monkeypatch.setitem(sys.modules, "torch", torch_mod)
     monkeypatch.setitem(sys.modules, "torch.utils", torch_utils_mod)
     monkeypatch.setitem(sys.modules, "torch.utils.data", torch_utils_data_mod)
