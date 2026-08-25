@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
 
 @dataclass

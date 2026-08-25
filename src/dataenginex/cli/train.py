@@ -87,11 +87,11 @@ def _run_experiments(
     model_dir: str,
 ) -> list[dict[str, str]]:
     """Run all experiments and return rows for tabular display."""
-    from dataenginex.ml.registry import ModelRegistry
-    from dataenginex.ml.tracking import tracker_registry
+    from dataenginex.domains.ml.registry import ModelRegistry
+    from dataenginex.domains.ml.tracking import tracker_registry
 
     # Import to trigger registry
-    from dataenginex.ml.tracking.builtin import BuiltinTracker as _  # noqa: F401
+    from dataenginex.domains.ml.tracking.builtin import BuiltinTracker as _  # noqa: F401
 
     tracker_cls = tracker_registry.get(config.ml.tracking.backend)
     tracker_kwargs: dict[str, Any] = {"storage_dir": f"{model_dir}/tracking"}
@@ -139,7 +139,7 @@ def _train_experiment(
     log: Any,
 ) -> dict[str, Any]:
     """Train a single experiment. Returns result dict."""
-    from dataenginex.ml.registry import ModelArtifact
+    from dataenginex.domains.ml.registry import ModelArtifact
 
     # Create tracker experiment + run
     exp_id = tracker.create_experiment(name)

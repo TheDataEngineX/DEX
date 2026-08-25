@@ -1,4 +1,4 @@
-"""Tests for SentenceTransformerFinetuneTrainer (dataenginex.ml.training).
+"""Tests for SentenceTransformerFinetuneTrainer (dataenginex.domains.ml.training).
 
 Kept in its own module (rather than test_ml.py) because test_ml.py has a
 module-level ``pytest.importorskip("torch")`` guard for TestPyTorchTrainer,
@@ -21,7 +21,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from dataenginex.ml.training import SentenceTransformerFinetuneTrainer, train_experiment
+from dataenginex.domains.ml.training import SentenceTransformerFinetuneTrainer, train_experiment
 
 
 class _FakeSentenceTransformer:

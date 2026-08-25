@@ -2,7 +2,7 @@
 
 The Python library that powers [DataEngineX Studio](https://github.com/TheDataEngineX/dex-studio) — an open-source, self-hosted, local-first Data + ML + AI workbench. Use the library directly when you want code; install DataEngineX Studio when you want a UI.
 
-> **Pre-1.0 status.** `0.5.2` is honest about that. See the [CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for details.
+> **Pre-1.0 status.** `0.7.0` is honest about that. See the [CHANGELOG](https://github.com/TheDataEngineX/dataenginex/blob/main/CHANGELOG.md) for details.
 
 ## Install
 
@@ -57,12 +57,12 @@ from dataenginex.config import load_config
 
 cfg = load_config("dex.yaml")
 
-from dataenginex.core.interfaces import BaseConnector
-from dataenginex.core.registry import BackendRegistry
+from dataenginex.foundation.plugin_contracts import BaseConnector
+from dataenginex.runtime.registry import BackendRegistry
 
 from dataenginex.ml import ModelRegistry
-from dataenginex.ai.llm import get_llm_provider
-from dataenginex.ai.vectorstore import VectorStoreBackend
+from dataenginex.domains.ai.llm import get_llm_provider
+from dataenginex.providers.vector.vectorstore import VectorStoreBackend
 ```
 
 ## Submodules
@@ -72,18 +72,29 @@ from dataenginex.ai.vectorstore import VectorStoreBackend
 | `dataenginex.engine` | `DexEngine` — single entry point; loads config, inits store, wires backends |
 | `dataenginex.store` | `DexStore` — SQLite (WAL) persistence (`.dex/store.duckdb`) |
 | `dataenginex.config` | `dex.yaml` schema, loader, env-var resolution |
-| `dataenginex.core` | Exceptions, `Base*` ABCs, `BackendRegistry` |
 | `dataenginex.cli` | `dex` CLI (`validate`, `version`, `init`) |
-| `dataenginex.data` | Connectors (CSV, Parquet, DuckDB, HTTP, …), pipeline runner, schema registry |
-| `dataenginex.ml` | Classical ML — training, model registry, serving, drift |
-| `dataenginex.ai` | LLM providers, agents, RAG, vector store, memory, observability |
-| `dataenginex.orchestration` | Scheduler, background workers |
+| `dataenginex.ai` | LLM providers, routing, agents, retrieval, tools, memory, workflows |
+| `dataenginex.api` | Pydantic response models, GraphQL schema (no HTTP server bundled) |
+| `dataenginex.application` | Domain services — governance, projects, runs, resources |
+| `dataenginex.bootstrap` | Engine wiring and startup |
+| `dataenginex.core` | Core abstractions and shared utilities |
+| `dataenginex.data` | Connectors (CSV, Parquet, DuckDB, REST, HTTP, Kafka) and transforms |
+| `dataenginex.domains` | Domain logic — ai, analytics, data, execution, governance, ml, plugins, security |
+| `dataenginex.duckdb` | DuckDB connection and helpers |
+| `dataenginex.engines` | Engine implementations and registry (DuckDB, Spark, base) |
+| `dataenginex.foundation` | Base ABCs, plugin contracts, errors, events, resources |
+| `dataenginex.interfaces` | Gateway, embedded, external service interfaces |
+| `dataenginex.lakehouse` | Bronze/Silver/Gold lakehouse storage and catalog |
 | `dataenginex.middleware` | structlog config, Prometheus metrics |
-| `dataenginex.lakehouse` | Storage backends, catalog, partitioning |
-| `dataenginex.warehouse` | Transforms, lineage tracking |
-| `dataenginex.secops` | PII detection, masking, audit logging |
-| `dataenginex.api` | Pydantic response models (no HTTP server bundled) |
+| `dataenginex.ml` | ML training, registry, serving, drift, features |
+| `dataenginex.orchestration` | Scheduler, background workers, queue backends |
+| `dataenginex.orm` | SQLAlchemy ORM models |
 | `dataenginex.plugins` | Entry-point plugin discovery |
+| `dataenginex.providers` | Backend implementations — connectors, vector, tracking |
+| `dataenginex.runtime` | Compiler, registry, ML runtime, sandbox |
+| `dataenginex.secops` | PII detection, masking, audit logging |
+| `dataenginex.spark` | PySpark connector (SQL, streaming, ML, catalog, lineage) |
+| `dataenginex.warehouse` | Warehouse operations |
 
 ## Want the UI?
 

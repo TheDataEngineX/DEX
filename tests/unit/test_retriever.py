@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dataenginex.ai.retrieval.builtin import _BM25, BuiltinRetriever, _rrf
-from dataenginex.ai.vectorstore import Document, SearchResult
+from dataenginex.domains.ai.retrieval.builtin import _BM25, BuiltinRetriever, _rrf
+from dataenginex.providers.vector.vectorstore import Document, SearchResult
 
 SAMPLE_DOCS = [
     {"id": "1", "text": "Python is a programming language"},

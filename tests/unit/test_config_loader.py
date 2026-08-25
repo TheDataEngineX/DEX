@@ -16,7 +16,7 @@ from dataenginex.config.schema import (
     ProjectConfig,
     TrackerConfig,
 )
-from dataenginex.core.exceptions import ConfigError
+from dataenginex.foundation.errors import ConfigError
 
 
 class TestResolveEnvVars:

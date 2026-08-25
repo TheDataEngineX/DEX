@@ -1,127 +1,77 @@
-# dataenginex.secops
+# SecOps
 
-Security operations — PII detection, data masking, audit logging, and a combined scan+mask+audit gate.
-
-## Quick import
+PII detection, masking, audit logging, and outbound-call privacy guard.
 
 ```python
 from dataenginex.secops import (
-    PIIDetector,
-    MaskingEngine,
-    MaskingStrategy,
-    AuditLogger,
-    SecOpsGate,
-    PrivacyGuard,
+    PIIDetector, MaskingEngine, AuditLogger, PrivacyGuard,
 )
 ```
 
-______________________________________________________________________
+## PIIDetector
 
-## PII Detection
-
-`dataenginex.secops.pii`
-
-Detects PII in records using field-name hints and value-pattern regexes (email, phone, SSN, credit card, IP address, date-of-birth).
-
-::: dataenginex.secops.pii
-
-**Key class:** `PIIDetector`
+Detect PII in text.
 
 ```python
-from dataenginex.secops.pii import PIIDetector
-
-detector = PIIDetector(confidence_threshold=0.5)
-detected = detector.scan_dataset(records)  # dict[field_name, PIIField]
-for field_name, finding in detected.items():
-    print(field_name, finding.pii_type, finding.confidence)
+detector = PIIDetector()
+matches = detector.scan("Email me at alice@example.com")
+# -> [PIIField(type=PIIType.EMAIL, value="alice@example.com", confidence=0.95)]
 ```
 
-______________________________________________________________________
+### Classes
 
-## Data Masking
+| Class | Description |
+|-------|-------------|
+| `PIIDetector` | PII detection engine |
+| `PIIField` | Individual PII match record |
+| `PIIType` | Enum of PII categories (EMAIL, PHONE, SSN, etc.) |
+| `TextMatch` | Text match result |
 
-`dataenginex.secops.masking`
+## MaskingEngine
 
-Masks PII fields in records. Supports redact, hash, partial (keep last N chars), and tokenize strategies.
-
-::: dataenginex.secops.masking
-
-**Key class:** `MaskingEngine`
+Mask or redact PII in text.
 
 ```python
-from dataenginex.secops.masking import MaskingEngine, MaskingStrategy
-
-masker = MaskingEngine(
-    default_strategy=MaskingStrategy.REDACT,
-    field_strategies={"email": MaskingStrategy.HASH, "phone": MaskingStrategy.PARTIAL},
-)
-masked_records = masker.mask_dataset(records, pii_fields={"email", "phone"})
+masker = MaskingEngine(strategy=MaskingStrategy.REDACT)
+safe_text = masker.mask("Email me at alice@example.com")
+# -> "Email me at [REDACTED]"
 ```
 
-______________________________________________________________________
+| Class | Description |
+|-------|-------------|
+| `MaskingEngine` | PII masking/redaction engine |
+| `MaskingStrategy` | Enum: REDACT, HASH, PARTIAL, TOKENIZE |
 
-## Audit Logging
+## AuditLogger
 
-`dataenginex.secops.audit`
-
-Structured audit log for PII scan/mask operations. Persisted to SQLite (WAL mode) — in-memory by default, file-backed when a `db_path` is given.
-
-::: dataenginex.secops.audit
-
-**Key class:** `AuditLogger`
+Log audit events to a database or in-memory store.
 
 ```python
-from dataenginex.secops.audit import AuditLogger
-
-audit = AuditLogger(db_path=".dex/audit.db")
-audit.log_scan(
-    dataset_name="ingest_events",
-    pii_fields=["email"],
-    record_count=1250,
-    actor="svc-account",
-)
-recent = audit.events_for("ingest_events")
+logger = AuditLogger()
+logger.log(action="pipeline.run", resource="clean_users", status="success")
+events = logger.get_events(action="pipeline.run")
 ```
 
-______________________________________________________________________
+| Class | Description |
+|-------|-------------|
+| `AuditLogger` | Audit trail logger |
+| `AuditEvent` | Audit event record |
+| `AuditOperation` | Audit operation type |
 
-## SecOps Gate
+## PrivacyGuard
 
-`dataenginex.secops.gate`
-
-Scans a batch of records for PII, masks the detected fields, and emits an audit event for both steps — in one call. Combines `PIIDetector`, `MaskingEngine`, and `AuditLogger`.
-
-::: dataenginex.secops.gate
-
-**Key class:** `SecOpsGate`
+Intercept outbound calls and block requests containing PII.
 
 ```python
-from dataenginex.secops import SecOpsGate, MaskingStrategy
-
-gate = SecOpsGate(
-    field_strategies={"email": MaskingStrategy.HASH},
-    dataset_name="users",
-)
-clean_records = gate.process(raw_records)
+guard = PrivacyGuard(config=PrivacyGuardConfig(enabled=True))
+result = guard.process("Send to openai", target="openai")
+if result.blocked:
+    raise PrivacyBlocked(result.reason)
 ```
 
-______________________________________________________________________
-
-## Privacy Guard
-
-`dataenginex.secops.guard`
-
-Pre-send PII interception for outbound LLM calls: scans a prompt, then masks or blocks it before it leaves the process. Compose with a provider via `dataenginex.ai.routing.guarded.GuardedProvider`, or call `process()` directly.
-
-::: dataenginex.secops.guard
-
-**Key class:** `PrivacyGuard`
-
-```python
-from dataenginex.secops.guard import PrivacyGuard
-
-guard = PrivacyGuard()
-result = guard.process("Contact me at jane@example.com", target="openai")
-print(result.safe_prompt)   # PII masked unless target is a local provider
-print(result.detections)    # tuple of TextMatch hits
-```
+| Class | Description |
+|-------|-------------|
+| `PrivacyGuard` | Outbound-call PII guard |
+| `PrivacyGuardConfig` | Guard configuration |
+| `GuardResult` | Result of guard processing |
+| `PrivacyBlocked` | Exception for blocked requests |

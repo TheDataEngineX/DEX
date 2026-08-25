@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 from dataenginex.config.schema import DexConfig
 from dataenginex.config.settings import DexSettings
-from dataenginex.core.exceptions import ConfigError
+from dataenginex.foundation.errors import ConfigError
 
 logger = structlog.get_logger()
 
@@ -158,17 +158,17 @@ def _validate_pipelines(config: DexConfig) -> list[str]:
 def _validate_registries(config: DexConfig) -> list[str]:
     """Check backends and tools against registries (warnings)."""
     # Import builtins to ensure they're registered before checking.
-    import dataenginex.ai.agents.builtin  # noqa: F401
-    import dataenginex.ml.features.builtin  # noqa: F401
-    import dataenginex.ml.serving_engine.builtin  # noqa: F401
-    import dataenginex.ml.tracking.builtin  # noqa: F401
-    from dataenginex.ai.agents import agent_registry
-    from dataenginex.ai.tools import tool_registry
-    from dataenginex.ai.tools.builtin import BUILTIN_TOOL_NAMES
-    from dataenginex.core.registry import BackendRegistry
-    from dataenginex.ml.features import feature_store_registry
-    from dataenginex.ml.serving_engine import serving_registry
-    from dataenginex.ml.tracking import tracker_registry
+    import dataenginex.domains.ai.agents.builtin  # noqa: F401
+    import dataenginex.domains.ml.features.builtin  # noqa: F401
+    import dataenginex.domains.ml.serving_engine.builtin  # noqa: F401
+    import dataenginex.domains.ml.tracking.builtin  # noqa: F401
+    from dataenginex.domains.ai.agents import agent_registry
+    from dataenginex.domains.ai.tools import tool_registry
+    from dataenginex.domains.ai.tools.builtin import BUILTIN_TOOL_NAMES
+    from dataenginex.domains.ml.features import feature_store_registry
+    from dataenginex.domains.ml.serving_engine import serving_registry
+    from dataenginex.domains.ml.tracking import tracker_registry
+    from dataenginex.runtime.registry import BackendRegistry
 
     warnings: list[str] = []
 

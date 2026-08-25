@@ -1,33 +1,37 @@
 """SecOps audit logging — structured log of PII detection and masking operations.
 
-Every time PII is detected or masked, an ``AuditEvent`` is emitted via
-structlog (structured key-value format) and persisted via the configured
-backend (SQLite WAL by default).
+Every time PII is detected or masked, an ``AuditEvent`` is emitted via structlog
+and appended to a bounded in-process buffer that the SecOps views read.
 
-This is NOT a replacement for a production audit trail (e.g. SIEM).
-It is a lightweight in-process layer that makes PII handling observable
-and testable without external infrastructure.
+**This buffer is not the audit trail.** The durable, legally-meaningful record is
+the control store's append-only ``audit_events`` table (§8.2, invariant 9),
+written through ``ControlStore.emit_audit`` in the same transaction as the state
+change it describes, and dispatched via the outbox.
 
-Thread-safety: SQLite WAL mode with per-thread connections.  Multiple
-threads in dex-studio's web server can call ``AuditLogger.log()``
-concurrently without races — WAL mode allows concurrent readers alongside
-a single writer, and each thread's own connection means there is no
-shared, racy sequence counter to protect.
+That distinction is why the SQLite backend that used to live here is gone. It
+opened a *fourth* database file with its own ``audit_events`` table, its own
+schema, and — the real problem — its own ``DELETE`` statement for FIFO eviction.
+An audit record you can silently evict is not an audit record, and two tables of
+the same name in two databases meant "show me the audit trail" had two answers
+that never agreed.
+
+What remains is deliberately in-memory and deliberately bounded: a recent-events
+view for the UI and for tests. Anything that must survive a restart is handed to
+an :class:`AuditSink` — the control store in a wired system — which appends where
+eviction is impossible.
 """
 
 from __future__ import annotations
 
 import contextlib
-import sqlite3
 import threading
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import structlog
-
-from dataenginex import _json
 
 logger = structlog.get_logger()
 
@@ -35,33 +39,8 @@ __all__ = [
     "AuditEvent",
     "AuditLogger",
     "AuditOperation",
+    "AuditSink",
 ]
-
-_CREATE_TABLE = """
-CREATE TABLE IF NOT EXISTS audit_events (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    operation    TEXT NOT NULL,
-    dataset_name TEXT NOT NULL,
-    pii_fields   TEXT NOT NULL,
-    record_count INTEGER NOT NULL,
-    actor        TEXT NOT NULL,
-    metadata     TEXT NOT NULL,
-    occurred_at  TEXT NOT NULL
-)
-"""
-
-_INSERT = """
-INSERT INTO audit_events
-    (operation, dataset_name, pii_fields, record_count, actor, metadata, occurred_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-"""
-
-_EVICT = """
-DELETE FROM audit_events
-WHERE id NOT IN (
-    SELECT id FROM audit_events ORDER BY id DESC LIMIT ?
-)
-"""
 
 
 class AuditOperation(StrEnum):
@@ -107,128 +86,51 @@ class AuditEvent:
         }
 
 
-class _SQLiteAuditBackend:
-    """SQLite WAL-backed audit store — thread-safe, multi-process-safe."""
+@runtime_checkable
+class AuditSink(Protocol):
+    """Somewhere an audit event can be durably appended.
 
-    def __init__(self, db_path: str, max_history: int) -> None:
-        self._db_path = db_path
-        self._max = max_history
-        self._in_memory = db_path == ":memory:"
-        self._lock = threading.Lock()
+    Narrow on purpose. The guard does not need to read the audit trail, only to
+    add to it, and a port that cannot express deletion is a port through which
+    nothing can quietly delete.
+    """
 
-        if self._in_memory:
-            self._mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
-            with self._mem_conn:
-                self._mem_conn.execute(_CREATE_TABLE)
-        else:
-            self._tls: threading.local = threading.local()
-            with self._get_conn() as conn:
-                conn.execute(_CREATE_TABLE)
-
-    def _get_conn(self) -> sqlite3.Connection:
-        if self._in_memory:
-            return self._mem_conn
-        if not hasattr(self._tls, "conn") or self._tls.conn is None:
-            conn = sqlite3.connect(self._db_path, timeout=10.0, check_same_thread=False)
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA synchronous=NORMAL")
-            self._tls.conn = conn
-        return self._tls.conn  # type: ignore[no-any-return]
-
-    def append(self, event: AuditEvent) -> None:
-        # AUTOINCREMENT — no _seq counter, no race condition
-        with self._lock, self._get_conn() as conn:
-            conn.execute(
-                _INSERT,
-                [
-                    event.operation.value,
-                    event.dataset_name,
-                    _json.dumps(event.pii_fields),
-                    event.record_count,
-                    event.actor,
-                    _json.dumps(event.metadata),
-                    event.occurred_at.isoformat(),
-                ],
-            )
-            conn.execute(_EVICT, [self._max])
-
-    def all(self) -> list[AuditEvent]:
-        rows = (
-            self._get_conn()
-            .execute(
-                "SELECT operation, dataset_name, pii_fields, record_count, "
-                "actor, metadata, occurred_at "
-                "FROM audit_events ORDER BY id ASC"
-            )
-            .fetchall()
-        )
-        return [self._row_to_event(r) for r in rows]
-
-    def filter_by_dataset(self, dataset_name: str) -> list[AuditEvent]:
-        rows = (
-            self._get_conn()
-            .execute(
-                "SELECT operation, dataset_name, pii_fields, record_count, "
-                "actor, metadata, occurred_at "
-                "FROM audit_events WHERE dataset_name = ? ORDER BY id ASC",
-                [dataset_name],
-            )
-            .fetchall()
-        )
-        return [self._row_to_event(r) for r in rows]
-
-    def clear(self) -> None:
-        with self._lock, self._get_conn() as conn:
-            conn.execute("DELETE FROM audit_events")
-
-    def close(self) -> None:
-        if self._in_memory:
-            self._mem_conn.close()
-        elif hasattr(self._tls, "conn") and self._tls.conn is not None:
-            self._tls.conn.close()
-            self._tls.conn = None
-
-    @staticmethod
-    def _row_to_event(row: tuple[Any, ...]) -> AuditEvent:
-        pii_fields: list[str] = [str(x) for x in _json.loads(row[2])]
-        meta: dict[str, Any] = _json.loads(row[5])
-        return AuditEvent(
-            operation=AuditOperation(row[0]),
-            dataset_name=row[1],
-            pii_fields=pii_fields,
-            record_count=int(row[3]),
-            actor=row[4],
-            metadata=meta,
-            occurred_at=datetime.fromisoformat(row[6]),
-        )
+    def append_secops_event(self, event: AuditEvent) -> None: ...
 
 
 class AuditLogger:
-    """Audit log for SecOps operations backed by SQLite WAL.
-
-    Emits structured structlog events on every write and persists events
-    in a SQLite database (in-memory by default, file-backed when *db_path*
-    is a filesystem path).
-
-    Thread-safe: WAL mode + per-thread connections.  Multiple web-server
-    workers can call ``log()`` concurrently without corruption.
+    """Recent SecOps audit events, in memory, plus an optional durable sink.
 
     Parameters
     ----------
     max_history:
-        Maximum number of events to retain (FIFO eviction by insertion order).
-    db_path:
-        SQLite database path. Defaults to ``":memory:"`` (no persistence).
-        Pass a file path (e.g. ``"/var/lib/dex/audit.db"``) for persistence
-        across restarts.
+        How many recent events to keep for display. Eviction here loses only
+        the view, never the record — the record went to *sink*.
+    sink:
+        Durable destination, typically the control store. When ``None`` the
+        events are observable in structlog and in this buffer only, which is
+        the right shape for a script or a test that has no control plane.
     """
 
-    def __init__(self, max_history: int = 1000, db_path: str = ":memory:") -> None:
-        self._backend = _SQLiteAuditBackend(db_path, max_history)
+    def __init__(self, max_history: int = 1000, sink: AuditSink | None = None) -> None:
+        self._events: deque[AuditEvent] = deque(maxlen=max_history)
+        self._sink = sink
+        # The guard is called from request threads in Studio and from worker
+        # threads in a pipeline; deque append is atomic but read-modify-write
+        # over the whole buffer is not.
+        self._lock = threading.Lock()
 
     def log(self, event: AuditEvent) -> None:
-        """Record an audit event (backend + structlog)."""
-        self._backend.append(event)
+        """Record an audit event: durable sink first, then buffer and structlog.
+
+        Sink first, because that is the write that matters. If it raises, the
+        caller finds out rather than getting a success that only updated a
+        buffer which vanishes on restart.
+        """
+        if self._sink is not None:
+            self._sink.append_secops_event(event)
+        with self._lock:
+            self._events.append(event)
         logger.info(
             "secops audit event",
             operation=event.operation.value,
@@ -281,20 +183,27 @@ class AuditLogger:
 
     @property
     def events(self) -> list[AuditEvent]:
-        """Return all retained audit events (oldest first)."""
-        return self._backend.all()
+        """Recent audit events, oldest first."""
+        with self._lock:
+            return list(self._events)
 
     def events_for(self, dataset_name: str) -> list[AuditEvent]:
-        """Return all events for a specific dataset."""
-        return self._backend.filter_by_dataset(dataset_name)
+        """Recent events for a specific dataset."""
+        with self._lock:
+            return [e for e in self._events if e.dataset_name == dataset_name]
 
     def clear(self) -> None:
-        """Clear all retained events."""
-        self._backend.clear()
+        """Drop the in-memory view.
+
+        Clears what is displayed, not what was recorded — anything handed to the
+        sink stays there, which is the point of having a sink.
+        """
+        with self._lock:
+            self._events.clear()
 
     def close(self) -> None:
-        """Release the SQLite connection. Important for file-backed databases."""
-        self._backend.close()
+        """No resources to release. Kept so callers need not care which backend."""
+        return
 
     def __del__(self) -> None:
         with contextlib.suppress(Exception):

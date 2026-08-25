@@ -1,8 +1,8 @@
-"""Tests for dataenginex.middleware.domain_metrics — Prometheus metric objects."""
+"""Tests for dataenginex.runtime.telemetry — Prometheus metric objects."""
 
 from __future__ import annotations
 
-from dataenginex.middleware.domain_metrics import (
+from dataenginex.runtime.telemetry import (
     ai_agent_iterations,
     ai_tokens_total,
     ai_tool_calls_total,
@@ -11,7 +11,6 @@ from dataenginex.middleware.domain_metrics import (
     pipeline_run_duration_seconds,
     pipeline_runs_total,
     quality_gate_evaluations_total,
-    tenant_operations_total,
 )
 
 
@@ -58,11 +57,6 @@ class TestDomainMetricsImport:
 
         assert isinstance(ml_model_predictions_total, Counter)
 
-    def test_tenant_operations_is_counter(self) -> None:
-        from prometheus_client import Counter
-
-        assert isinstance(tenant_operations_total, Counter)
-
 
 class TestDomainMetricsUsage:
     """Basic usage — label sets and observe calls must not raise."""
@@ -93,9 +87,4 @@ class TestDomainMetricsUsage:
     def test_ml_predictions_increment(self) -> None:
         ml_model_predictions_total.labels(
             model="churn_model", version="1.0", status="success"
-        ).inc()
-
-    def test_tenant_operations_increment(self) -> None:
-        tenant_operations_total.labels(
-            tenant="default", operation="pipeline_run", status="ok"
         ).inc()

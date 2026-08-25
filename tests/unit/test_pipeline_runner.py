@@ -3,13 +3,34 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from dataenginex.config import load_config
 from dataenginex.config.schema import DexConfig
-from dataenginex.data.pipeline.runner import PipelineRunner
-from dataenginex.warehouse.lineage import PersistentLineage
+from dataenginex.domains.data.pipeline.runner import PipelineRunner
+
+
+class RecordingLineage:
+    """Minimal ``LineageBackend`` that keeps events in memory.
+
+    The runner is what is under test here, not a storage backend, so this
+    asserts against the protocol the runner actually calls rather than against
+    whichever concrete store happens to be wired in.
+    """
+
+    def __init__(self) -> None:
+        self.events: list[SimpleNamespace] = []
+
+    def record(self, **kwargs: object) -> SimpleNamespace:
+        event = SimpleNamespace(**kwargs)
+        self.events.append(event)
+        return event
+
+    @property
+    def all_events(self) -> list[SimpleNamespace]:
+        return self.events
 
 
 @pytest.fixture()
@@ -93,7 +114,7 @@ class TestPipelineRunner:
 
     def test_lineage_recorded_on_run(self, tmp_path: Path, simple_config: DexConfig) -> None:
         """Pipeline run records lineage events for extract and load."""
-        lineage = PersistentLineage(tmp_path / "lineage.json")
+        lineage = RecordingLineage()
         runner = PipelineRunner(simple_config, data_dir=tmp_path / "lakehouse", lineage=lineage)
         result = runner.run("ingest-movies")
         assert result.success

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
-from dataenginex.ai.tools import ToolRegistry, ToolSpec
+from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
+from dataenginex.domains.ai.tools import ToolRegistry, ToolSpec
 
 
 class TestBuiltinAgentRuntime:

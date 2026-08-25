@@ -173,8 +173,8 @@ class TestEngineWiring:
         assert engine.privacy_guard.config.strategies[PIIType.EMAIL] == MaskingStrategy.HASH
 
     def test_engine_providers_are_wrapped(self, _minimal_config_path: Any) -> None:
-        from dataenginex.ai.routing.guarded import GuardedProvider
         from dataenginex.engine import DexEngine
+        from dataenginex.providers.model.guarded import GuardedProvider
 
         engine = DexEngine(_minimal_config_path)
         if not hasattr(engine, "model_router"):
@@ -229,8 +229,8 @@ secops:
         assert result.blocked is True
 
         # And via GuardedProvider with a fake inner:
-        from dataenginex.ai.routing.guarded import GuardedProvider
-        from dataenginex.ai.routing.router import BaseProvider
+        from dataenginex.domains.ai.providers import BaseProvider
+        from dataenginex.providers.model.guarded import GuardedProvider
 
         class _Spy(BaseProvider):
             calls = 0

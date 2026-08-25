@@ -29,7 +29,7 @@ from typing import Any
 
 import pytest
 
-from dataenginex.lakehouse.storage import (
+from dataenginex.providers.object_store.storage import (
     GCSStorage,
     JsonStorage,
     S3Storage,

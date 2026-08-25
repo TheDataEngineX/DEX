@@ -7,10 +7,10 @@ from typing import Any
 
 import pytest
 
-from dataenginex.ml.drift import DriftDetector, DriftReport
-from dataenginex.ml.registry import VERSION_AUTO, ModelArtifact, ModelRegistry, ModelStage
-from dataenginex.ml.serving import ModelServer, PredictionRequest
-from dataenginex.ml.training import PyTorchTrainer, SklearnTrainer, TrainingResult
+from dataenginex.domains.ml.drift import DriftDetector, DriftReport
+from dataenginex.domains.ml.registry import VERSION_AUTO, ModelArtifact, ModelRegistry, ModelStage
+from dataenginex.domains.ml.serving import ModelServer, PredictionRequest
+from dataenginex.domains.ml.training import PyTorchTrainer, SklearnTrainer, TrainingResult
 
 # ============================================================================
 # Training

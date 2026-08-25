@@ -7,6 +7,7 @@ Integrates with Spark's built-in metrics system.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import structlog
 
@@ -17,7 +18,7 @@ logger = structlog.get_logger()
 __all__ = ["ResourceAccounting"]
 
 try:
-    from pyspark import SparkContext
+    from pyspark import SparkContext  # noqa: F401
 
     _PYSPARK_AVAILABLE = True
 except ImportError:
@@ -74,7 +75,7 @@ class ResourceAccounting:
         self._resource_usage: dict[str, ResourceUsage] = {}
         self._total_cost: float = 0.0
 
-    def record_job_metrics(self, run_id: str, metrics: dict) -> None:
+    def record_job_metrics(self, run_id: str, metrics: dict[str, Any]) -> None:
         """Record metrics for a Spark job.
 
         Args:
@@ -116,7 +117,7 @@ class ResourceAccounting:
             cost_estimate=cost,
         )
 
-    def get_job_metrics(self, run_id: str) -> dict | None:
+    def get_job_metrics(self, run_id: str) -> dict[str, Any] | None:
         """Get metrics for a specific job.
 
         Args:
@@ -142,7 +143,7 @@ class ResourceAccounting:
             "peak_execution_memory": metrics.peak_execution_memory,
         }
 
-    def get_resource_usage(self, run_id: str) -> dict | None:
+    def get_resource_usage(self, run_id: str) -> dict[str, Any] | None:
         """Get resource usage for a specific job.
 
         Args:
@@ -171,7 +172,7 @@ class ResourceAccounting:
         """
         return self._total_cost
 
-    def get_usage_summary(self) -> dict:
+    def get_usage_summary(self) -> dict[str, Any]:
         """Get summary of all resource usage.
 
         Returns:
@@ -208,7 +209,7 @@ class ResourceAccounting:
 
         return cpu_cost + memory_cost
 
-    def get_performance_metrics(self, run_id: str) -> dict:
+    def get_performance_metrics(self, run_id: str) -> dict[str, Any]:
         """Get performance metrics for a job.
 
         Args:
@@ -246,7 +247,7 @@ class ResourceAccounting:
             ),
         }
 
-    def collect_spark_metrics(self) -> dict:
+    def collect_spark_metrics(self) -> dict[str, Any]:
         """Collect metrics from Spark's metrics system.
 
         Returns:
@@ -258,11 +259,9 @@ class ResourceAccounting:
         try:
             from pyspark import SparkContext
 
-            sc = SparkContext.getActive()
+            sc = SparkContext._active_spark_context
             if not sc:
                 return {"error": "No active SparkContext"}
-
-            sc = sc[0]
 
             # Get executor metrics
             executor_metrics = sc._jsc.sc().statusTracker().getExecutorInfos()

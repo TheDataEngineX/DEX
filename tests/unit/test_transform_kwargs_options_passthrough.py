@@ -8,7 +8,7 @@ with no error until pipeline-run time.
 from __future__ import annotations
 
 from dataenginex.config.schema import TransformStepConfig
-from dataenginex.data.pipeline.runner import _build_transform_kwargs
+from dataenginex.domains.data.pipeline.runner import _build_transform_kwargs
 
 
 def test_options_dict_passes_through_to_transform_kwargs() -> None:

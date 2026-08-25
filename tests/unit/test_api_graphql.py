@@ -13,7 +13,7 @@ import pytest
 from dataenginex.api.graphql import GoldTable, build_schema
 
 deltalake = pytest.importorskip("deltalake")
-from dataenginex.lakehouse.storage import DeltaStorage  # noqa: E402
+from dataenginex.providers.object_store.storage import DeltaStorage  # noqa: E402
 
 
 class _FakeEngine:

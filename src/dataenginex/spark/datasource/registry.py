@@ -6,7 +6,7 @@ Supports registering and discovering data sources.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -17,7 +17,7 @@ logger = structlog.get_logger()
 __all__ = ["DataSourceRegistry"]
 
 try:
-    from pyspark.sql import SparkSession
+    from pyspark.sql import SparkSession  # noqa: F401
 
     _PYSPARK_AVAILABLE = True
 except ImportError:
@@ -36,7 +36,7 @@ class DataSourceRegistry:
 
     def __init__(self, project_id: ProjectId) -> None:
         self.project_id = project_id
-        self._sources: dict[str, dict] = {}
+        self._sources: dict[str, dict[str, Any]] = {}
         self._loaded_sources: dict[str, Any] = {}
 
     def register(
@@ -45,7 +45,7 @@ class DataSourceRegistry:
         source_class: str,
         description: str = "",
         capabilities: list[str] | None = None,
-        config_schema: dict | None = None,
+        config_schema: dict[str, Any] | None = None,
     ) -> None:
         """Register a custom data source.
 
@@ -79,7 +79,7 @@ class DataSourceRegistry:
         self._loaded_sources.pop(name, None)
         logger.info("data source unregistered", name=name)
 
-    def get_source(self, name: str) -> dict | None:
+    def get_source(self, name: str) -> dict[str, Any] | None:
         """Get source configuration.
 
         Args:
@@ -90,7 +90,7 @@ class DataSourceRegistry:
         """
         return self._sources.get(name)
 
-    def list_sources(self) -> list[dict]:
+    def list_sources(self) -> list[dict[str, Any]]:
         """List all registered sources.
 
         Returns:
@@ -125,10 +125,11 @@ class DataSourceRegistry:
             source_class = getattr(module, class_name)
 
             # Instantiate with optional spark session
-            if spark_session:
-                source = source_class(spark=spark_session)
-            else:
-                source = source_class()
+            source = (
+                source_class(spark=spark_session)
+                if spark_session
+                else source_class()
+            )
 
             self._loaded_sources[name] = source
             logger.info("data source loaded", name=name)
@@ -141,9 +142,9 @@ class DataSourceRegistry:
     def read(
         self,
         source_name: str,
-        options: dict | None = None,
+        options: dict[str, Any] | None = None,
         spark_session: Any | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Read data from a registered source.
 
         Args:
@@ -164,9 +165,9 @@ class DataSourceRegistry:
 
         # Call read method
         if hasattr(source, "read"):
-            return source.read(**(options or {}))
+            return cast(list[dict[str, Any]], source.read(**(options or {})))
         elif hasattr(source, "load"):
-            return source.load(**(options or {}))
+            return cast(list[dict[str, Any]], source.load(**(options or {})))
         else:
             msg = f"Source has no read/load method: {source_name}"
             raise ValueError(msg)
@@ -174,10 +175,10 @@ class DataSourceRegistry:
     def write(
         self,
         source_name: str,
-        data: list[dict],
-        options: dict | None = None,
+        data: list[dict[str, Any]],
+        options: dict[str, Any] | None = None,
         spark_session: Any | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Write data to a registered source.
 
         Args:
@@ -199,9 +200,9 @@ class DataSourceRegistry:
 
         # Call write method
         if hasattr(source, "write"):
-            return source.write(data, **(options or {}))
+            return cast(dict[str, Any], source.write(data, **(options or {})))
         elif hasattr(source, "save"):
-            return source.save(data, **(options or {}))
+            return cast(dict[str, Any], source.save(data, **(options or {})))
         else:
             msg = f"Source has no write/save method: {source_name}"
             raise ValueError(msg)
@@ -216,9 +217,9 @@ class DataSourceRegistry:
             List of capabilities
         """
         source_config = self._sources.get(source_name, {})
-        return source_config.get("capabilities", [])
+        return cast(list[str], source_config.get("capabilities", []))
 
-    def validate_config(self, source_name: str, config: dict) -> dict:
+    def validate_config(self, source_name: str, config: dict[str, Any]) -> dict[str, Any]:
         """Validate configuration for a source.
 
         Args:

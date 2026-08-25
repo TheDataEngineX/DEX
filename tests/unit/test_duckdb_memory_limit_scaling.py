@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dataenginex.core import resources
+from dataenginex.runtime import resource_limits as resources
 
 
 @pytest.fixture(autouse=True)

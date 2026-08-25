@@ -7,7 +7,7 @@ Provides Spark-specific lineage event generation.
 from __future__ import annotations
 
 from datetime import UTC
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -74,9 +74,9 @@ class OpenLineageProjection:
         run_id: str,
         job_name: str,
         event_type: str = "START",
-        inputs: list[dict] | None = None,
-        outputs: list[dict] | None = None,
-    ) -> dict:
+        inputs: list[dict[str, Any]] | None = None,
+        outputs: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         """Create an OpenLineage run event.
 
         Args:
@@ -122,9 +122,9 @@ class OpenLineageProjection:
         name: str,
         namespace: str | None = None,
         dataset_type: str = "table",
-        schema: list[dict] | None = None,
-        facets: dict | None = None,
-    ) -> dict:
+        schema: list[dict[str, Any]] | None = None,
+        facets: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Create an OpenLineage dataset descriptor.
 
         Args:
@@ -151,7 +151,7 @@ class OpenLineageProjection:
         name: str,
         source_type: str = "delta",
         path: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Create an input dataset.
 
         Args:
@@ -173,7 +173,7 @@ class OpenLineageProjection:
         name: str,
         sink_type: str = "delta",
         path: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Create an output dataset.
 
         Args:
@@ -190,7 +190,7 @@ class OpenLineageProjection:
 
         return self.create_dataset(name, facets=facets)
 
-    def create_schema_facet(self, fields: list[dict]) -> dict:
+    def create_schema_facet(self, fields: list[dict[str, Any]]) -> dict[str, Any]:
         """Create a schema facet.
 
         Args:
@@ -210,7 +210,7 @@ class OpenLineageProjection:
             ]
         }
 
-    def create_lineage_facet(self, inputs: list[str], outputs: list[str]) -> dict:
+    def create_lineage_facet(self, inputs: list[str], outputs: list[str]) -> dict[str, Any]:
         """Create a lineage facet showing input-output relationships.
 
         Args:
@@ -225,7 +225,7 @@ class OpenLineageProjection:
             "outputs": outputs,
         }
 
-    def _send_event(self, event: dict) -> None:
+    def _send_event(self, event: dict[str, Any]) -> None:
         """Send event to OpenLineage API.
 
         Args:
@@ -257,7 +257,7 @@ class OpenLineageProjection:
         dataset_name: str | None = None,
         job_name: str | None = None,
         depth: int = 3,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Query lineage from OpenLineage.
 
         Args:
@@ -272,7 +272,7 @@ class OpenLineageProjection:
             return {"error": "OpenLineage client not connected"}
 
         try:
-            params = {"depth": depth}
+            params: dict[str, Any] = {"depth": str(depth)}
             if dataset_name:
                 params["dataset"] = dataset_name
             if job_name:
@@ -280,7 +280,7 @@ class OpenLineageProjection:
 
             response = self._client.get("/api/v1/lineage", params=params)
             response.raise_for_status()
-            return response.json()
+            return cast(dict[str, Any], response.json())
         except Exception as exc:
             logger.error("failed to get lineage", error=str(exc))
             return {"error": str(exc)}

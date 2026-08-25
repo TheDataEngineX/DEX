@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.ai.llm import (
+from dataenginex.domains.ai.llm import (
     ChatMessage,
     LLMConfig,
     LLMResponse,

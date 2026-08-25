@@ -24,7 +24,7 @@ except ImportError:
     _MLFLOW_AVAILABLE = False
 
 try:
-    from pyspark.ml import Pipeline
+    from pyspark.ml import Pipeline  # noqa: F401
     from pyspark.ml.classification import (
         DecisionTreeClassifier,
         GBTClassifier,
@@ -33,18 +33,21 @@ try:
     )
     from pyspark.ml.clustering import KMeans
     from pyspark.ml.evaluation import (
-        BinaryClassificationEvaluator,
-        MulticlassClassificationEvaluator,
-        RegressionEvaluator,
+        BinaryClassificationEvaluator,  # noqa: F401
+        MulticlassClassificationEvaluator,  # noqa: F401
+        RegressionEvaluator,  # noqa: F401
     )
-    from pyspark.ml.feature import StandardScaler, VectorAssembler
+    from pyspark.ml.feature import (
+        StandardScaler,  # noqa: F401
+        VectorAssembler,  # noqa: F401
+    )
     from pyspark.ml.regression import (
         DecisionTreeRegressor,
         GBTRegressor,
         LinearRegression,
         RandomForestRegressor,
     )
-    from pyspark.sql import SparkSession
+    from pyspark.sql import SparkSession  # noqa: F401
 
     _PYSPARK_ML_AVAILABLE = True
 except ImportError:
@@ -69,6 +72,28 @@ REGRESSION_ALGORITHMS = {
 CLUSTERING_ALGORITHMS = {
     "kmeans": "KMeans",
 }
+
+# Lazy map — populated only when PySpark ML is available
+_ALGO_CLASS_MAP: dict[str, type] = {}
+
+
+def _build_algo_map() -> None:
+    if not _PYSPARK_ML_AVAILABLE:
+        return
+    _ALGO_CLASS_MAP.update({
+        "LogisticRegression": LogisticRegression,
+        "DecisionTreeClassifier": DecisionTreeClassifier,
+        "RandomForestClassifier": RandomForestClassifier,
+        "GBTClassifier": GBTClassifier,
+        "LinearRegression": LinearRegression,
+        "DecisionTreeRegressor": DecisionTreeRegressor,
+        "RandomForestRegressor": RandomForestRegressor,
+        "GBTRegressor": GBTRegressor,
+        "KMeans": KMeans,
+    })
+
+
+_build_algo_map()
 
 
 class MLlibProvider:
@@ -119,10 +144,10 @@ class MLlibProvider:
         self,
         algorithm: str,
         dataset_ref: str,
-        parameters: dict | None = None,
+        parameters: dict[str, Any] | None = None,
         feature_columns: list[str] | None = None,
         label_column: str = "label",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Submit a training job with governance.
 
         Args:
@@ -211,8 +236,8 @@ class MLlibProvider:
         self,
         algorithm: str,
         dataset_ref: str,
-        parameters: dict | None = None,
-    ) -> dict:
+        parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Fallback training with scikit-learn (when PySpark ML not available)."""
         try:
             import mlflow.sklearn
@@ -322,81 +347,45 @@ class MLlibProvider:
         algorithm: str,
         feature_columns: list[str],
         label_column: str,
-        parameters: dict,
+        parameters: dict[str, Any],
     ) -> Any:
-        """Create ML pipeline with preprocessing and algorithm.
-
-        Args:
-            algorithm: Algorithm name
-            feature_columns: Feature column names
-            label_column: Label column name
-            parameters: Algorithm parameters
-
-        Returns:
-            PySpark ML Pipeline
-        """
+        """Create ML pipeline with preprocessing and algorithm."""
         from pyspark.ml import Pipeline
         from pyspark.ml.feature import VectorAssembler
 
-        # Feature assembly
         assembler = VectorAssembler(
             inputCols=feature_columns,
             outputCol="features",
             handleInvalid="skip",
         )
 
-        # Select algorithm
         algo_name = (
             CLASSIFICATION_ALGORITHMS.get(algorithm)
             or REGRESSION_ALGORITHMS.get(algorithm)
             or CLUSTERING_ALGORITHMS.get(algorithm)
         )
-
         if algo_name is None:
             msg = f"Unknown algorithm: {algorithm}"
             raise ValueError(msg)
 
-        # Get algorithm class
-        if algo_name == "LogisticRegression":
-            algo = LogisticRegression(featuresCol="features", labelCol=label_column, **parameters)
-        elif algo_name == "DecisionTreeClassifier":
-            algo = DecisionTreeClassifier(
-                featuresCol="features", labelCol=label_column, **parameters
-            )
-        elif algo_name == "RandomForestClassifier":
-            algo = RandomForestClassifier(
-                featuresCol="features", labelCol=label_column, **parameters
-            )
-        elif algo_name == "GBTClassifier":
-            algo = GBTClassifier(featuresCol="features", labelCol=label_column, **parameters)
-        elif algo_name == "LinearRegression":
-            algo = LinearRegression(featuresCol="features", labelCol=label_column, **parameters)
-        elif algo_name == "DecisionTreeRegressor":
-            algo = DecisionTreeRegressor(
-                featuresCol="features", labelCol=label_column, **parameters
-            )
-        elif algo_name == "RandomForestRegressor":
-            algo = RandomForestRegressor(
-                featuresCol="features", labelCol=label_column, **parameters
-            )
-        elif algo_name == "GBTRegressor":
-            algo = GBTRegressor(featuresCol="features", labelCol=label_column, **parameters)
-        elif algo_name == "KMeans":
-            algo = KMeans(featuresCol="features", **parameters)
-        else:
+        algo_cls = _ALGO_CLASS_MAP.get(algo_name)
+        if algo_cls is None:
             msg = f"Algorithm not implemented: {algo_name}"
             raise ValueError(msg)
 
-        # Build pipeline
-        stages = [assembler, algo]
-        return Pipeline(stages=stages)
+        kwargs = {"featuresCol": "features", **parameters}
+        if algo_name != "KMeans":
+            kwargs["labelCol"] = label_column
+        algo = algo_cls(**kwargs)
+
+        return Pipeline(stages=[assembler, algo])
 
     def _evaluate_model(
         self,
         algorithm: str,
         predictions: Any,
         label_column: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Evaluate trained model.
 
         Args:
@@ -445,7 +434,7 @@ class MLlibProvider:
         model_path: str,
         model_name: str,
         version: str = "1.0.0",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Register model in MLflow model registry.
 
         Args:
@@ -513,12 +502,12 @@ class MLlibProvider:
             logger.error("model loading failed", model_name=model_name, error=str(exc))
             raise
 
-    def _no_op(self):
+    def _no_op(self) -> Any:
         """Context manager that does nothing (for when MLflow is not available)."""
         from contextlib import contextmanager
 
         @contextmanager
-        def noop():
+        def noop() -> Any:
             yield None
 
         return noop()

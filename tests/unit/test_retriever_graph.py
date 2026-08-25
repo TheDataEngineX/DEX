@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from dataenginex.ai.retrieval import retriever_registry
-from dataenginex.ai.retrieval.graph import GraphRetriever, default_extract_entities
+from dataenginex.domains.ai.retrieval import retriever_registry
+from dataenginex.domains.ai.retrieval.graph import GraphRetriever, default_extract_entities
 
 _DOCS: list[dict[str, Any]] = [
     {"id": "1", "text": "Snowflake handles schema drift via ALTER TABLE."},

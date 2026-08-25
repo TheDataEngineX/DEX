@@ -1,97 +1,44 @@
-# CI/CD Pipeline
+# CI/CD
 
-**Continuous integration and release automation for dataenginex.**
+DataEngineX uses GitHub Actions for continuous integration and PyPI releases.
 
-______________________________________________________________________
+## CI pipeline
 
-## Overview
+Every push and PR triggers:
 
-dataenginex is a pure Python library published to PyPI. The pipeline is:
+1. **Lint** — Ruff linting with zero warnings
+2. **Typecheck** — mypy strict mode
+3. **Test** — pytest with coverage threshold (85%+)
+4. **Security** — dependency audit
 
-- **CI**: Linting, type checking, testing, and security scanning on every PR to `main`.
-- **Release**: Push a `v{X.Y.Z}` tag to `main` → `release.yml` builds, publishes to PyPI, and creates a GitHub Release.
+## Release automation
 
-```mermaid
-graph LR
-    Dev[Developer] --> PR[Open PR to main]
-    PR --> CI[CI: Lint/Test/Security]
-    CI --> Review[Code Review]
-    Review --> Merge["Merge to main"]
-    Merge --> Tag["Push tag vX.Y.Z"]
-    Tag --> Release[release.yml]
-    Release --> Build["Build wheel + sdist"]
-    Build --> PyPI["Publish to PyPI (OIDC)"]
-    Build --> GHRelease["GitHub Release + CycloneDX SBOM"]
-```
+Releases are automated via `uv run poe release`:
 
-______________________________________________________________________
-
-## Continuous Integration (CI)
-
-**Workflow**: `.github/workflows/ci.yml`
-
-**Triggers**:
-
-- Push to `main`
-- Pull requests targeting `main`
-
-**Jobs**:
-
-### 1. Quality (`quality`)
+1. Version bump in `pyproject.toml`
+2. Git tag created
+3. Push to PyPI via trusted publishing
+4. GitHub Release created with changelog
 
 ```bash
-uv run ruff check src/ tests/
-uv run mypy src/dataenginex/ --strict
+uv run poe release major   # 0.7.0 → 1.0.0
+uv run poe release minor   # 0.7.0 → 0.8.0
+uv run poe release patch   # 0.7.0 → 0.7.1
 ```
 
-### 2. Test (`test`)
+## Publishing to PyPI
 
 ```bash
-uv run pytest tests/ -x --tb=short --cov=src/dataenginex/
+uv run poe publish
 ```
 
-Coverage threshold: 85% (1476+ tests).
+Requires `PYPI_TOKEN` environment variable or trusted publisher configured in PyPI.
 
-### 3. Package validation
+## Documentation
+
+Docs are built and deployed via the website repo's sync workflow:
 
 ```bash
-uv build
+# Triggered automatically on release, or manually:
+# .github/workflows/sync.yml copies docs/ → website/docs-store/
 ```
-
-### 4. Security Scans
-
-Runs via the shared reusable workflow at `.github/workflows/security.yml`:
-
-- **Trivy**: Misconfig and secret scan — results uploaded to GitHub Security tab.
-- **CodeQL**: Handled by GitHub's default setup.
-
-______________________________________________________________________
-
-## Release Automation
-
-**Workflow**: `.github/workflows/release.yml`
-
-**Trigger**: Push a tag matching `v[0-9]+.[0-9]+.[0-9]+` to `main`.
-
-**Jobs**:
-
-1. **build** — `uv build` → upload wheel + sdist
-1. **publish-pypi** — `pypa/gh-action-pypi-publish` (OIDC trusted publishing)
-1. **github-release** — CycloneDX SBOM → `gh release create`
-
-**How to release**:
-
-```bash
-git tag v1.2.3
-git push origin v1.2.3
-```
-
-______________________________________________________________________
-
-## Workflows Overview
-
-| Workflow | Trigger | Purpose |
-| --- | --- | --- |
-| **CI** | Push/PR to main | Lint + typecheck + test + security |
-| **Security** | Push/PR to main | Trivy misconfig + secret scan |
-| **Release** | Push tag `v*.*.*` to main | Build → PyPI → GitHub Release |

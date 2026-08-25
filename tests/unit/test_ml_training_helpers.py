@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import pickle
 from pathlib import Path
 from typing import Any
@@ -12,7 +13,7 @@ sklearn = pytest.importorskip("sklearn")
 
 from sklearn.dummy import DummyClassifier  # noqa: E402
 
-from dataenginex.ml.training import (  # noqa: E402
+from dataenginex.domains.ml.training import (  # noqa: E402
     SklearnTrainer,
     TrainingResult,
     _hmac_sign,
@@ -53,18 +54,32 @@ class TestHmacVerify:
         assert _hmac_verify(b"tampered", sig) is False
 
 
+class _RunsCommandOnLoad:
+    """A payload shaped like a real pickle attack.
+
+    ``__reduce__`` is what makes pickle dangerous: loading this calls
+    ``os.system`` rather than merely describing it. Pickling a dict that
+    *mentions* ``os.system`` proves nothing, because no class is ever resolved.
+    """
+
+    def __reduce__(self) -> tuple[Any, tuple[str]]:
+        import os
+
+        return (os.system, ("echo pwned",))
+
+
 class TestSafeUnpickler:
     def test_allows_sklearn(self) -> None:
         clf = DummyClassifier()
         clf.fit([[1], [2]], [0, 1])
         data = pickle.dumps(clf)
-        result = _SafeUnpickler(pickle.BytesIO(data)).load()
+        result = _SafeUnpickler(io.BytesIO(data)).load()
         assert hasattr(result, "predict")
 
     def test_blocks_os_module(self) -> None:
-        data = pickle.dumps({"__class__": "os.system"})
+        data = pickle.dumps(_RunsCommandOnLoad())
         with pytest.raises(pickle.UnpicklingError, match="Unsafe pickle"):
-            _SafeUnpickler(pickle.BytesIO(data)).load()
+            _SafeUnpickler(io.BytesIO(data)).load()
 
 
 class TestTrainingResult:
@@ -163,7 +178,7 @@ class TestSklearnTrainer:
         t.train([[1], [2]], [0, 1])
         path = tmp_path / "model.pkl"
         path.write_bytes(pickle.dumps(t.estimator))
-        sig_path = path.with_suffix(".sig")
+        sig_path = path.with_name(path.name + ".sig")
         sig_path.write_text("bad_signature")
         with pytest.raises(ValueError, match="HMAC verification failed"):
             t.load(str(path))

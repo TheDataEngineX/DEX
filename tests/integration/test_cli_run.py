@@ -35,7 +35,7 @@ data:
         layer: silver
 """)
         runner = CliRunner()
-        args = ["run", "ingest", "--config", str(config), "--data-dir", str(tmp_path / "data")]
+        args = ["run", "ingest", "--config", str(config), "--state-dir", str(tmp_path / "state")]
         result = runner.invoke(dex, args)
         assert result.exit_code == 0
 
@@ -61,7 +61,7 @@ data:
         layer: silver
 """)
         runner = CliRunner()
-        args = ["run", "--all", "--config", str(config), "--data-dir", str(tmp_path / "data")]
+        args = ["run", "--all", "--config", str(config), "--state-dir", str(tmp_path / "state")]
         result = runner.invoke(dex, args)
         assert result.exit_code == 0
 

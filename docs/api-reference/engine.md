@@ -1,96 +1,85 @@
-# dataenginex.engine
+# DexEngine
 
-`DexEngine` — the central runtime that wires config, pipelines, ML, AI, and storage together.
-
-## Quick import
+Main entry point for DataEngineX. Initializes all subsystems from a `dex.yaml` config file.
 
 ```python
-from dataenginex import DexEngine
+from dataenginex.engine import DexEngine
 
 engine = DexEngine("dex.yaml")
 ```
 
-______________________________________________________________________
-
-## DexEngine
-
-`dataenginex.engine`
-
-Top-level entry point. Loads config, initialises subsystems (connector registry, ML registry, AI router, scheduler, stores), and exposes a unified API for running pipelines, training models, and querying state.
-
-::: dataenginex.engine
-
-**Key class:** `DexEngine`
-
-### Lifecycle
+## Constructor
 
 ```python
-from dataenginex import DexEngine
-
-engine = DexEngine("dex.yaml")
-
-# Health check
-status = engine.health()
-print(status.ok, status.components)
-
-# Run a pipeline
-result = engine.run_pipeline("ingest_events")
-print(result.rows_written, result.duration_ms)
-
-# Train a model
-train_result = engine.train("churn_model")
-print(train_result.metrics)
-
-# Predict
-prediction = engine.predict("churn_model", features={"age": 34, "tenure": 12})
-print(prediction.label, prediction.probability)
+DexEngine(config_path: str | Path) -> None
 ```
 
-### Config-first usage
+Loads config, creates `.dex/` directory, initializes DuckDB store, plugin registry, ML subsystems, vector store, pipeline runner, AI layer, PrivacyGuard, and Spark subsystems.
 
-All subsystems are driven by `dex.yaml`. `DexEngine` is the only object most applications need:
+## Properties
 
-```yaml
-# dex.yaml
-pipelines:
-  ingest_events:
-    source:
-      type: csv
-      path: data/raw/events.csv
-    destination:
-      type: parquet
-      path: data/bronze/events
+| Property | Return type | Description |
+|----------|-------------|-------------|
+| `model_registry` | `Any` | Model registry from serving engine |
+| `lineage` | `Any` | DexStore instance (lineage backend) |
+| `ai_long_memory` | `Any` | Short-term memory for AI agents |
 
-ml:
-  churn_model:
-    trainer: sklearn
-    algorithm: random_forest
-    target: churned
-    features: [age, tenure, spend]
-```
+## Pipeline Methods
 
-```python
-engine = DexEngine("dex.yaml")
-engine.run_pipeline("ingest_events")
-engine.train("churn_model")
-```
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `run_pipeline` | `(name: str, *, progress_cb=None, checkpoint_cb=None) -> Any` | Run a named pipeline |
+| `pipeline_stats` | `() -> dict[str, int]` | Row counts per pipeline |
+| `pipeline_last_run` | `(name: str) -> Any \| None` | Last run record for a pipeline |
+| `update_pipeline_schedule` | `(name: str, schedule: str \| None) -> None` | Update cron schedule |
+| `add_pipeline` | `(name, source, schedule="", destination="", engine="duckdb") -> None` | Add a pipeline |
+| `add_pipeline_transform` | `(pipeline: str, step: dict) -> None` | Append a transform step |
+| `delete_pipeline_transform` | `(pipeline: str, index: int) -> None` | Remove a transform by index |
+| `reorder_pipeline_transform` | `(pipeline: str, index: int, direction: int) -> None` | Move a transform step |
+| `preview_flow` | `(name: str) -> dict[str, Any]` | Preview pipeline output |
+| `delete_pipeline` | `(name: str) -> None` | Delete a pipeline |
 
-______________________________________________________________________
+## Source Methods
 
-## Store
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `add_source` | `(name, type_, path="", url="", connection=None) -> None` | Register a data source |
+| `delete_source` | `(name: str) -> None` | Remove a data source |
+| `source_row_count` | `(source_name: str) -> int \| None` | Row count for a source |
+| `source_schema` | `(source_name: str) -> list[dict] \| None` | Column schema for a source |
+| `source_sample` | `(source_name: str, limit=10, offset=0) -> list[dict] \| None` | Sample rows from a source |
+| `source_stats` | `(source_name: str) -> dict \| None` | Statistics for a source |
 
-`dataenginex.store`
+## Warehouse Methods
 
-Low-level DuckDB store used by all DEX subsystems (lineage, run history, feature store, audit log, catalog). Applications rarely need to interact with this directly.
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `warehouse_layers` | `() -> list[dict]` | List available layers (bronze/silver/gold) |
+| `warehouse_tables` | `(layer: str) -> list[dict]` | Tables in a layer |
+| `warehouse_table_schema` | `(table_name, layer) -> list[dict]` | Column schema for a table |
+| `warehouse_table_stats` | `(table_name, layer) -> dict` | Row count, size, etc. |
+| `warehouse_table_lineage` | `(table_name, layer) -> dict` | Lineage for a table |
 
-::: dataenginex.store
+## Quality Methods
 
-______________________________________________________________________
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `quality_check_table` | `(table_name: str) -> dict \| None` | Quality results for a table |
+| `quality_check_all_tables` | `() -> dict` | Quality results for all tables |
+| `quality_history` | `() -> dict` | Historical quality results |
 
-## Worker
+## AI / Agent Methods
 
-`dataenginex.worker`
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `add_agent` | `(name, runtime="builtin", system_prompt="") -> None` | Create an AI agent |
+| `delete_agent` | `(name: str) -> None` | Remove an AI agent |
+| `delete_model` | `(name: str) -> None` | Remove a registered model |
+| `trigger_ai_index_refresh` | `() -> None` | Refresh AI search indices |
 
-Background worker process for async pipeline and model job execution. Used by the scheduler and queue backends.
+## Lifecycle
 
-::: dataenginex.worker
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `health` | `() -> dict[str, Any]` | Engine health status |
+| `close` | `() -> None` | Release resources |

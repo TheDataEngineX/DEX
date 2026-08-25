@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataenginex.ml.registry import VERSION_AUTO, ModelArtifact, ModelRegistry, ModelStage
+from dataenginex.domains.ml.registry import VERSION_AUTO, ModelArtifact, ModelRegistry, ModelStage
 
 
 class TestModelArtifact:

@@ -6,7 +6,7 @@ Supports parameterized queries and result caching.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -40,9 +40,9 @@ class SparkSQLExecutor:
         self,
         sql: str,
         run_id: RunId | None = None,
-        parameters: dict | None = None,
+        parameters: dict[str, Any] | None = None,
         use_cache: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Execute SQL with project-scoped authorization.
 
         Args:
@@ -68,7 +68,7 @@ class SparkSQLExecutor:
         cache_key = self._get_cache_key(sql, parameters) if use_cache else None
         if cache_key and cache_key in self._query_cache:
             logger.info("query cache hit", cache_key=cache_key)
-            return self._query_cache[cache_key]
+            return cast(dict[str, Any], self._query_cache[cache_key])
 
         # Execute query
         if self._spark_client and self._spark_client.is_connected:
@@ -89,13 +89,13 @@ class SparkSQLExecutor:
             run_id=str(run_id),
         )
 
-        return result
+        return cast(dict[str, Any], result)
 
     def execute_batch(
         self,
         queries: list[dict[str, Any]],
         run_id: RunId | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Execute multiple SQL queries in sequence.
 
         Args:
@@ -115,7 +115,7 @@ class SparkSQLExecutor:
 
         return results
 
-    def explain(self, sql: str) -> dict:
+    def explain(self, sql: str) -> dict[str, Any]:
         """Get the query execution plan without executing.
 
         Args:
@@ -136,7 +136,7 @@ class SparkSQLExecutor:
 
         return {"status": "error", "error": "No Spark session available"}
 
-    def _validate_query(self, sql: str) -> dict:
+    def _validate_query(self, sql: str) -> dict[str, Any]:
         """Validate SQL query for safety and syntax.
 
         Args:
@@ -170,8 +170,8 @@ class SparkSQLExecutor:
         self,
         sql: str,
         run_id: RunId | None = None,
-        parameters: dict | None = None,
-    ) -> dict:
+        parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Execute SQL locally (fallback when no Spark client).
 
         Args:
@@ -194,7 +194,7 @@ class SparkSQLExecutor:
             "mode": "local",
         }
 
-    def _get_cache_key(self, sql: str, parameters: dict | None) -> str:
+    def _get_cache_key(self, sql: str, parameters: dict[str, Any] | None) -> str:
         """Generate cache key for query.
 
         Args:

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from dataenginex.config import load_config
-from dataenginex.data.pipeline.runner import PipelineRunner
+from dataenginex.domains.data.pipeline.runner import PipelineRunner
 
 
 @pytest.fixture()

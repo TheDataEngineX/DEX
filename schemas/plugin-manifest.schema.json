@@ -1,0 +1,305 @@
+{
+  "$defs": {
+    "ConnectorDeclaration": {
+      "additionalProperties": false,
+      "description": "A connector a plugin provides (\u00a710.5).",
+      "properties": {
+        "direction": {
+          "default": "source",
+          "title": "Direction",
+          "type": "string"
+        },
+        "formats": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Formats",
+          "type": "array"
+        },
+        "implementation": {
+          "default": "",
+          "title": "Implementation",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "supports_incremental": {
+          "default": false,
+          "title": "Supports Incremental",
+          "type": "boolean"
+        },
+        "supports_schema_discovery": {
+          "default": false,
+          "title": "Supports Schema Discovery",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ConnectorDeclaration",
+      "type": "object"
+    },
+    "Determinism": {
+      "description": "Whether identical inputs yield identical outputs.\n\n``NONDETERMINISTIC`` covers model inference with sampling and anything\nreading wall-clock or live external state \u2014 such outputs cannot be\nreproduced from inputs alone, so provenance must record the observed result\nrather than promise recomputation.",
+      "enum": [
+        "deterministic",
+        "seeded",
+        "nondeterministic"
+      ],
+      "title": "Determinism",
+      "type": "string"
+    },
+    "IdempotencyStrategy": {
+      "description": "How a repeated execution is made safe (\u00a74.7).\n\n``NONE`` is a declaration that repetition is unsafe, which forces the\nruntime to require an idempotency key or human approval rather than\nsilently retrying.",
+      "enum": [
+        "none",
+        "natural",
+        "keyed",
+        "transactional",
+        "deduplicated"
+      ],
+      "title": "IdempotencyStrategy",
+      "type": "string"
+    },
+    "OperationDeclaration": {
+      "additionalProperties": false,
+      "description": "An operation a plugin provides (\u00a710.6).\n\nMirrors the fields of a core operation because the compiler and runtime must\ntreat plugin operations identically \u2014 a plugin operation that skipped the\nside-effect or risk declaration would be invisible to policy.",
+      "properties": {
+        "determinism": {
+          "$ref": "#/$defs/Determinism",
+          "default": "deterministic"
+        },
+        "idempotency": {
+          "$ref": "#/$defs/IdempotencyStrategy",
+          "default": "natural"
+        },
+        "implementation": {
+          "default": "",
+          "title": "Implementation",
+          "type": "string"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "memory_mb": {
+          "default": 512,
+          "exclusiveMinimum": 0,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "outputs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Outputs",
+          "type": "array"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": 1
+        },
+        "side_effect": {
+          "$ref": "#/$defs/SideEffectClass",
+          "default": "read"
+        },
+        "timeout_seconds": {
+          "default": 3600,
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "OperationDeclaration",
+      "type": "object"
+    },
+    "PluginMetadata": {
+      "additionalProperties": false,
+      "description": "Identity of a plugin (\u00a710.3).",
+      "properties": {
+        "author": {
+          "default": "",
+          "title": "Author",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "homepage": {
+          "default": "",
+          "title": "Homepage",
+          "type": "string"
+        },
+        "license": {
+          "default": "",
+          "title": "License",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "title": "PluginMetadata",
+      "type": "object"
+    },
+    "PluginSpec": {
+      "additionalProperties": false,
+      "description": "What the plugin needs and provides (\u00a710.3).",
+      "properties": {
+        "capabilities": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "connectors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ConnectorDeclaration"
+          },
+          "title": "Connectors",
+          "type": "array"
+        },
+        "dependencies": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "entry_point": {
+          "default": "",
+          "title": "Entry Point",
+          "type": "string"
+        },
+        "network": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Network",
+          "type": "array"
+        },
+        "operations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/OperationDeclaration"
+          },
+          "title": "Operations",
+          "type": "array"
+        },
+        "python_requires": {
+          "default": "",
+          "title": "Python Requires",
+          "type": "string"
+        },
+        "secrets": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Secrets",
+          "type": "array"
+        }
+      },
+      "title": "PluginSpec",
+      "type": "object"
+    },
+    "RiskLevel": {
+      "description": "Action-risk levels 0-5 (\u00a79.5).\n\nInteger-valued because policy compares them: default policy requires\nexplicit configuration at ``TRANSMIT_EXTERNAL`` and human approval at or\nabove ``MODIFY_EXTERNAL``.",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "title": "RiskLevel",
+      "type": "integer"
+    },
+    "SideEffectClass": {
+      "description": "What an operation changes (\u00a74.7).\n\nDrives retry safety and policy: ``EXTERNAL_WRITE`` cannot be retried\nblindly and always requires destination policy evaluation (invariant 7).",
+      "enum": [
+        "pure",
+        "read",
+        "local_write",
+        "external_read",
+        "external_write",
+        "destructive"
+      ],
+      "title": "SideEffectClass",
+      "type": "string"
+    },
+    "TrustLevel": {
+      "description": "How much a principal's declarations are believed (\u00a710.8).\n\nApplies mainly to plugins and agents: an untrusted plugin's manifest claims\nare validated against observed behavior rather than taken at face value.",
+      "enum": [
+        "untrusted",
+        "community",
+        "verified",
+        "first_party"
+      ],
+      "title": "TrustLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The full declaration (\u00a710.3).",
+  "properties": {
+    "apiVersion": {
+      "default": "dex/v1alpha1",
+      "title": "Apiversion",
+      "type": "string"
+    },
+    "kind": {
+      "default": "Plugin",
+      "title": "Kind",
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "#/$defs/PluginMetadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/PluginSpec"
+    },
+    "trust_level": {
+      "$ref": "#/$defs/TrustLevel",
+      "default": "untrusted"
+    }
+  },
+  "required": [
+    "metadata"
+  ],
+  "title": "PluginManifest",
+  "type": "object"
+}

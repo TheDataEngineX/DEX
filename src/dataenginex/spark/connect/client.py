@@ -26,6 +26,26 @@ except ImportError:
     _PYSPARK_AVAILABLE = False
 
 
+def _delta_maven_package() -> str:
+    """Maven coordinate for the installed Delta Lake Python package.
+
+    ``delta.configure_spark_with_delta_pip()`` derives the artifact suffix
+    from ``pyspark.__version__`` (e.g. ``delta-spark_4.2_2.13`` for pyspark
+    4.2.0) — but Delta only publishes Spark-line-suffixed artifacts up to
+    the Spark minor version it was actually built against, which lags the
+    newest installed PySpark. That produced a real 404 during dependency
+    resolution here (pyspark 4.2.0 + delta-spark 4.1.0: no
+    ``delta-spark_4.2_2.13`` on Maven Central). The unsuffixed artifact
+    (``delta-spark_2.13:<version>``) exists for every Delta release and is
+    what this pins to instead — verified against Maven Central and a real
+    Delta write+read under pyspark 4.2.0.
+    """
+    import importlib_metadata
+
+    delta_version = importlib_metadata.version("delta_spark")
+    return f"io.delta:delta-spark_2.13:{delta_version}"
+
+
 class SparkConnectClient:
     """Managed Spark Connect client (§20.4).
 
@@ -41,7 +61,7 @@ class SparkConnectClient:
         self,
         server_url: str = "local[*]",
         project_id: ProjectId | None = None,
-        session_config: dict | None = None,
+        session_config: dict[str, Any] | None = None,
     ) -> None:
         self.server_url = server_url
         self.project_id = project_id
@@ -64,7 +84,32 @@ class SparkConnectClient:
             builder = SparkSession.builder.master(self.server_url)
             builder = builder.appName(f"dex-{self.project_id or 'default'}")
 
-            # Apply session configuration
+            # Delta Lake requires these two configs regardless of how the jar
+            # itself gets resolved (see _delta_maven_package for why we don't
+            # use delta.configure_spark_with_delta_pip's own suffix logic).
+            builder = builder.config(
+                "spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension"
+            )
+            builder = builder.config(
+                "spark.sql.catalog.spark_catalog",
+                "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+            )
+            builder = builder.config("spark.jars.packages", _delta_maven_package())
+
+            if self.server_url.startswith("local"):
+                # macOS commonly resolves the machine hostname to its LAN IP
+                # rather than loopback (observed live: "Your hostname ...
+                # resolves to a loopback address ... using 192.168.x.x
+                # instead"). A local-mode executor then fetches driver
+                # dependencies (e.g. the Delta jars just pulled in via
+                # spark.jars.packages) over that LAN IP, which intermittently
+                # fails to self-connect and crashes SparkContext startup.
+                # Pin to loopback — the same fix tests/conftest.py's `spark`
+                # fixture already applies for exactly this reason.
+                builder = builder.config("spark.driver.bindAddress", "127.0.0.1")
+                builder = builder.config("spark.driver.host", "127.0.0.1")
+
+            # Apply session configuration (may override the Delta defaults above)
             for key, value in self.session_config.items():
                 builder = builder.config(key, value)
 
@@ -81,7 +126,6 @@ class SparkConnectClient:
                 "spark session started",
                 server_url=self.server_url,
                 project_id=str(self.project_id),
-                session_id=self._session.sparkSession.sessionId,
             )
         except Exception as exc:
             logger.error("spark session failed", error=str(exc))
@@ -103,8 +147,8 @@ class SparkConnectClient:
         self,
         query: str,
         run_id: RunId | None = None,
-        parameters: dict | None = None,
-    ) -> dict:
+        parameters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Execute SQL through Spark Connect.
 
         Returns execution result metadata (not raw DataFrame).
@@ -152,7 +196,7 @@ class SparkConnectClient:
                 "error": str(exc),
             }
 
-    def submit_pipeline(self, pipeline_path: str, run_id: RunId) -> dict:
+    def submit_pipeline(self, pipeline_path: str, run_id: RunId) -> dict[str, Any]:
         """Submit a Spark Declarative Pipeline for execution.
 
         In local mode, this runs the pipeline as a spark-submit job.
@@ -220,7 +264,7 @@ class SparkConnectClient:
                 "error": str(exc),
             }
 
-    def get_session_config(self) -> dict:
+    def get_session_config(self) -> dict[str, Any]:
         """Get project-scoped session configuration."""
         return {
             "server_url": self.server_url,

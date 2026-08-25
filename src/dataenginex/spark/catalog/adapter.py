@@ -6,6 +6,8 @@ Supports Hive Metastore and Unity Catalog.
 
 from __future__ import annotations
 
+import contextlib
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -29,11 +31,14 @@ class SparkCatalogAdapter:
     def __init__(
         self,
         catalog_type: str = "hive",
-        connection_config: dict | None = None,
+        connection_config: dict[str, Any] | None = None,
     ) -> None:
         self.catalog_type = catalog_type
         self.connection_config = connection_config or {}
         self._client: Any | None = None
+        # Set eagerly (not just in _connect_file_catalog) so list_databases/list_tables
+        # don't raise AttributeError if called before connect().
+        self._lakehouse_root = Path(self.connection_config.get("lakehouse_path", ".dex/lakehouse"))
 
     def connect(self) -> None:
         """Establish connection to catalog service."""
@@ -71,20 +76,20 @@ class SparkCatalogAdapter:
         self._client = None
 
     def _connect_file_catalog(self) -> None:
-        """Connect to file-based catalog (local development)."""
-        logger.info("using file-based catalog")
-        self._client = None
+        """Connect to file-based catalog — scans .dex/lakehouse/ for Delta tables."""
+        lakehouse_path = self.connection_config.get("lakehouse_path", ".dex/lakehouse")
+        self._lakehouse_root = Path(lakehouse_path)
+        self._client = None  # no network client for file mode — real lookups go via _lakehouse_root
+        logger.info("using file-based catalog", lakehouse_path=str(self._lakehouse_root))
 
     def disconnect(self) -> None:
         """Disconnect from catalog service."""
         if self._client is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._client.close()
-            except Exception:
-                pass
             self._client = None
 
-    def spark_table_to_resource(self, identifier: SparkCatalogIdentifier) -> dict:
+    def spark_table_to_resource(self, identifier: SparkCatalogIdentifier) -> dict[str, Any]:
         """Convert a Spark table identifier to a DEX resource entry.
 
         Args:
@@ -123,7 +128,7 @@ class SparkCatalogAdapter:
 
         return resource
 
-    def list_databases(self, catalog: str | None = None) -> list[dict]:
+    def list_databases(self, catalog: str | None = None) -> list[dict[str, Any]]:
         """List all databases in a catalog.
 
         Args:
@@ -135,15 +140,15 @@ class SparkCatalogAdapter:
         if self._client:
             return self._list_databases_from_hive(catalog)
 
-        # Mock data for development
+        if self.catalog_type != "file" or not self._lakehouse_root.exists():
+            return []
         return [
-            {"name": "default", "description": "Default database"},
-            {"name": "bronze", "description": "Bronze layer tables"},
-            {"name": "silver", "description": "Silver layer tables"},
-            {"name": "gold", "description": "Gold layer tables"},
+            {"name": layer_dir.name, "description": f"{layer_dir.name} layer tables"}
+            for layer_dir in sorted(self._lakehouse_root.iterdir())
+            if layer_dir.is_dir()
         ]
 
-    def list_tables(self, database: str = "default") -> list[dict]:
+    def list_tables(self, database: str = "default") -> list[dict[str, Any]]:
         """List all tables in a database.
 
         Args:
@@ -155,14 +160,18 @@ class SparkCatalogAdapter:
         if self._client:
             return self._list_tables_from_hive(database)
 
-        # Mock data for development
-        return [
-            {"name": "employees", "type": "MANAGED", "format": "delta"},
-            {"name": "departments", "type": "MANAGED", "format": "delta"},
-            {"name": "sales", "type": "EXTERNAL", "format": "parquet"},
-        ]
+        if self.catalog_type != "file":
+            return []
+        layer_dir = self._lakehouse_root / database
+        if not layer_dir.exists():
+            return []
+        tables = []
+        for table_dir in sorted(layer_dir.iterdir()):
+            if table_dir.is_dir() and (table_dir / "_delta_log").exists():
+                tables.append({"name": table_dir.name, "type": "MANAGED", "format": "delta"})
+        return tables
 
-    def get_table_schema(self, identifier: SparkCatalogIdentifier) -> dict:
+    def get_table_schema(self, identifier: SparkCatalogIdentifier) -> dict[str, Any]:
         """Get table schema.
 
         Args:
@@ -174,17 +183,23 @@ class SparkCatalogAdapter:
         if self._client:
             return self._get_table_schema_from_hive(identifier)
 
-        # Mock schema for development
+        if self.catalog_type != "file":
+            return {"columns": [], "partition_columns": []}
+        table_dir = self._lakehouse_root / identifier.namespace / identifier.table
+        if not (table_dir / "_delta_log").exists():
+            return {"columns": [], "partition_columns": []}
+        from deltalake import DeltaTable
+
+        dt = DeltaTable(str(table_dir))
+        schema = dt.schema()
         return {
             "columns": [
-                {"name": "id", "type": "bigint", "nullable": False},
-                {"name": "name", "type": "string", "nullable": True},
-                {"name": "created_at", "type": "timestamp", "nullable": True},
+                {"name": f.name, "type": f.type.type, "nullable": f.nullable} for f in schema.fields
             ],
-            "partition_columns": [],
+            "partition_columns": dt.metadata().partition_columns,
         }
 
-    def _get_table_metadata(self, identifier: SparkCatalogIdentifier) -> dict:
+    def _get_table_metadata(self, identifier: SparkCatalogIdentifier) -> dict[str, Any]:
         """Get table metadata from catalog.
 
         Args:
@@ -196,17 +211,28 @@ class SparkCatalogAdapter:
         if self._client:
             return self._get_table_metadata_from_hive(identifier)
 
-        # Mock metadata for development
+        if self.catalog_type != "file":
+            return {}
+        table_dir = self._lakehouse_root / identifier.namespace / identifier.table
+        if not (table_dir / "_delta_log").exists():
+            return {}
+        from datetime import UTC, datetime
+
+        from deltalake import DeltaTable
+
+        dt = DeltaTable(str(table_dir))
+        md = dt.metadata()
+        created_at = ""
+        if md.created_time:
+            created_at = datetime.fromtimestamp(md.created_time / 1000, tz=UTC).isoformat()
         return {
             "table_type": "MANAGED",
             "format": "delta",
-            "location": f"/user/hive/warehouse/{identifier.namespace}.{identifier.table}",
-            "owner": "hive",
-            "created_at": "2024-01-01T00:00:00Z",
-            "last_accessed": "2024-01-15T10:30:00Z",
+            "location": str(table_dir),
+            "created_at": created_at,
         }
 
-    def _list_databases_from_hive(self, catalog: str | None) -> list[dict]:
+    def _list_databases_from_hive(self, catalog: str | None) -> list[dict[str, Any]]:
         """List databases from Hive Metastore."""
         if not self._client:
             return []
@@ -222,7 +248,7 @@ class SparkCatalogAdapter:
             logger.error("failed to list databases", error=str(exc))
             return []
 
-    def _list_tables_from_hive(self, database: str) -> list[dict]:
+    def _list_tables_from_hive(self, database: str) -> list[dict[str, Any]]:
         """List tables from Hive Metastore."""
         if not self._client:
             return []
@@ -239,7 +265,7 @@ class SparkCatalogAdapter:
             logger.error("failed to list tables", error=str(exc))
             return []
 
-    def _get_table_schema_from_hive(self, identifier: SparkCatalogIdentifier) -> dict:
+    def _get_table_schema_from_hive(self, identifier: SparkCatalogIdentifier) -> dict[str, Any]:
         """Get table schema from Hive Metastore."""
         if not self._client:
             return {"columns": [], "partition_columns": []}
@@ -262,7 +288,7 @@ class SparkCatalogAdapter:
             logger.error("failed to get table schema", error=str(exc))
             return {"columns": [], "partition_columns": []}
 
-    def _get_table_metadata_from_hive(self, identifier: SparkCatalogIdentifier) -> dict:
+    def _get_table_metadata_from_hive(self, identifier: SparkCatalogIdentifier) -> dict[str, Any]:
         """Get table metadata from Hive Metastore."""
         if not self._client:
             return {}

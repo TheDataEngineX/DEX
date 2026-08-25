@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from dataenginex.core.validators import DataQualityChecks, ValidationReport
+from dataenginex.domains.analytics.validators import DataQualityChecks, ValidationReport
 
 
 class TestDataQualityChecks:

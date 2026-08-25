@@ -72,7 +72,7 @@ class DexSettings(BaseSettings):
         env_file_tuple = tuple(env_files) if env_files else (".env",)
 
         # Create a dynamic subclass with custom env_file
-        class DynamicSettings(cls):  # type: ignore[misc, valid-type]
+        class DynamicSettings(cls):  # type: ignore[valid-type]
             model_config = SettingsConfigDict(
                 env_file=env_file_tuple,
                 env_file_encoding="utf-8",

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thedataenginex.org/schemas/release-descriptor-v0.7.json",
+  "title": "DEX Release Descriptor v0.7",
+  "description": "Signed release metadata consumed by InfraDEX and Studio",
+  "type": "object",
+  "required": ["apiVersion", "platformVersion", "sparkVersion", "apiCompatibility", "images"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "dex.release/v0.7"
+    },
+    "platformVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "sparkVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "apiCompatibility": {
+      "type": "string",
+      "description": "Semver range for compatible DEX API versions"
+    },
+    "images": {
+      "type": "object",
+      "properties": {
+        "runtime": { "type": "string" },
+        "studio": { "type": "string" },
+        "worker": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "requiredPorts": {
+      "type": "object",
+      "properties": {
+        "studio": { "type": "integer", "default": 7860 },
+        "api": { "type": "integer", "default": 8765 }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "dataRoot": { "type": "string" }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "description": "JSON Schema URLs for manifest validation"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Detached signature for release verification"
+    }
+  },
+  "additionalProperties": false
+}

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 import duckdb
 
 from dataenginex.config.schema import DexConfig, PipelineConfig
-from dataenginex.data.pipeline.runner import PipelineRunner
+from dataenginex.domains.data.pipeline.runner import PipelineRunner
 from dataenginex.orm import EntityResolutionMatch, get_engine, get_session
 
 
@@ -60,7 +60,10 @@ def test_publish_output_uses_sink_and_does_not_change_loaded_data(tmp_path: Path
     cfg = PipelineConfig(source="unused", destination="events", publish_to=["sink"])
     with (
         duckdb.connect(":memory:") as conn,
-        patch("dataenginex.data.pipeline.runner.connector_registry.get", return_value=_Sink),
+        patch(
+            "dataenginex.domains.data.pipeline.runner.connector_registry.get",
+            return_value=_Sink,
+        ),
     ):
         conn.execute("CREATE TABLE output AS SELECT 1 AS id, 'ready' AS status")
         runner._publish_outputs(conn, cfg, "output", MagicMock())  # noqa: SLF001

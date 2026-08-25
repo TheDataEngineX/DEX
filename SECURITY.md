@@ -4,7 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| Latest (0.4.x) | ✅ |
+| Latest (0.7.x) | ✅ |
 | Previous minor release | ✅ (security fixes only) |
 | Older versions | ❌ |
 

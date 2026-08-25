@@ -68,7 +68,7 @@ class TestDexEngineInit:
         assert isinstance(engine.store, DexStore)
 
     def test_catalog_is_accessible(self, engine: DexEngine) -> None:
-        from dataenginex.lakehouse.catalog import DataCatalog
+        from dataenginex.domains.data.catalog import DataCatalog
 
         assert isinstance(engine.catalog, DataCatalog)
 

@@ -65,7 +65,7 @@ dev = [
     "pre-commit>=4.6.0",
     "pip-audit>=2.10.0",
 ]
-spark = ["pyspark>=4.2.0", "delta-spark>=4.0.0"]
+spark = ["pyspark>=4.2.0", "delta-spark>=4.0.0", "pyiceberg>=0.11.0"]
 notebook = ["pandas>=2.0.0"]
 ml = ["scikit-learn>=1.9.0", "sentence-transformers>=5.6.0"]
 tracking = ["mlflow>=3.14.0", "pandas>=2.0.0,<3"]
@@ -139,6 +139,7 @@ filterwarnings = [
     "ignore:unclosed.*socket:ResourceWarning",
     "ignore:unclosed event loop:ResourceWarning",
     "ignore::pytest.PytestUnhandledThreadExceptionWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]

@@ -15,7 +15,7 @@ from collections.abc import Iterator
 
 import pytest
 
-from dataenginex.data.connectors.http import HttpConnector
+from dataenginex.providers.connectors.http import HttpConnector
 
 _TSV_BODY = "tconst\taverageRating\ttitle\ntt0000001\t5.7\tCarmencita\ntt0000002\t6.0\tLe clown\n"
 

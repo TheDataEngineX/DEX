@@ -15,7 +15,7 @@ import pytest
 
 class TestShortTermMemory:
     def test_add_and_recent(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
 
         m = ShortTermMemory()
         m.add(MemoryEntry(content="hello", role="user"))
@@ -25,7 +25,7 @@ class TestShortTermMemory:
         assert recent[-1].content == "world"
 
     def test_max_entries_eviction(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
 
         m = ShortTermMemory(max_entries=2)
         for i in range(3):
@@ -34,7 +34,7 @@ class TestShortTermMemory:
         assert m.recent(10)[0].content == "msg1"
 
     def test_search(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
 
         m = ShortTermMemory()
         m.add(MemoryEntry(content="pipeline failed", role="user"))
@@ -44,7 +44,7 @@ class TestShortTermMemory:
         assert "pipeline" in results[0].content
 
     def test_clear(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
 
         m = ShortTermMemory()
         m.add(MemoryEntry(content="x", role="user"))
@@ -52,7 +52,7 @@ class TestShortTermMemory:
         assert m.recent() == []
 
     def test_base_memory_is_abstract(self) -> None:
-        from dataenginex.ai.memory.base import BaseMemory
+        from dataenginex.domains.ai.memory.base import BaseMemory
 
         with pytest.raises(TypeError):
             BaseMemory()  # type: ignore[abstract]
@@ -60,16 +60,16 @@ class TestShortTermMemory:
 
 class TestLongTermMemory:
     def test_add_and_recent(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         m.add(MemoryEntry(content="fact about pipelines", role="system"))
         assert len(m.recent(5)) == 1
 
     def test_search_keyword(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         m.add(MemoryEntry(content="duckdb is fast for analytics", role="system"))
@@ -79,8 +79,8 @@ class TestLongTermMemory:
         assert "duckdb" in results[0].content
 
     def test_clear(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         m.add(MemoryEntry(content="x", role="user"))
@@ -88,8 +88,8 @@ class TestLongTermMemory:
         assert m.recent() == []
 
     def test_persist_and_load(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         m.add(MemoryEntry(content="fact one", role="system"))
@@ -107,8 +107,8 @@ class TestLongTermMemory:
         assert m2.recent(10)[1].content == "fact two"
 
     def test_persist_overwrites(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         m.add(MemoryEntry(content="v1", role="user"))
@@ -125,8 +125,8 @@ class TestLongTermMemory:
         assert len(m2.recent(10)) == 2
 
     def test_timestamp_auto_set(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry
-        from dataenginex.ai.memory.long_term import LongTermMemory
+        from dataenginex.domains.ai.memory.base import MemoryEntry
+        from dataenginex.domains.ai.memory.long_term import LongTermMemory
 
         m = LongTermMemory()
         entry = MemoryEntry(content="x", role="user", timestamp=0.0)
@@ -138,12 +138,12 @@ class TestEpisodicMemory:
     def _episode(self, task: str, reward: float = 1.0) -> Any:
         import time
 
-        from dataenginex.ai.memory.episodic import Episode
+        from dataenginex.domains.ai.memory.episodic import Episode
 
         return Episode(task=task, steps=[], outcome="ok", reward=reward, timestamp=time.time())
 
     def test_add_and_recall(self) -> None:
-        from dataenginex.ai.memory.episodic import EpisodicMemory
+        from dataenginex.domains.ai.memory.episodic import EpisodicMemory
 
         m = EpisodicMemory()
         m.add_episode(self._episode("run pipeline"))
@@ -151,7 +151,7 @@ class TestEpisodicMemory:
         assert len(results) == 1
 
     def test_recall_similar_ranked(self) -> None:
-        from dataenginex.ai.memory.episodic import EpisodicMemory
+        from dataenginex.domains.ai.memory.episodic import EpisodicMemory
 
         m = EpisodicMemory()
         m.add_episode(self._episode("run data pipeline on duckdb"))
@@ -162,7 +162,7 @@ class TestEpisodicMemory:
         assert "pipeline" in results[0].task
 
     def test_best_episodes(self) -> None:
-        from dataenginex.ai.memory.episodic import EpisodicMemory
+        from dataenginex.domains.ai.memory.episodic import EpisodicMemory
 
         m = EpisodicMemory()
         m.add_episode(self._episode("low reward", reward=0.1))
@@ -180,7 +180,7 @@ class TestAuditLog:
     def test_log_and_get_all(self) -> None:
         import time
 
-        from dataenginex.ai.observability.audit import AuditEntry, AuditLog
+        from dataenginex.domains.ai.observability.audit import AuditEntry, AuditLog
 
         ts = time.time()
         log = AuditLog()
@@ -191,7 +191,7 @@ class TestAuditLog:
     def test_filter_by_agent(self) -> None:
         import time
 
-        from dataenginex.ai.observability.audit import AuditEntry, AuditLog
+        from dataenginex.domains.ai.observability.audit import AuditEntry, AuditLog
 
         ts = time.time()
         log = AuditLog()
@@ -204,7 +204,7 @@ class TestAuditLog:
     def test_limit(self) -> None:
         import time
 
-        from dataenginex.ai.observability.audit import AuditEntry, AuditLog
+        from dataenginex.domains.ai.observability.audit import AuditEntry, AuditLog
 
         ts = time.time()
         log = AuditLog()
@@ -216,7 +216,7 @@ class TestAuditLog:
 
 class TestCostTracker:
     def test_record_and_total(self) -> None:
-        from dataenginex.ai.observability.cost import CostTracker, TokenUsage
+        from dataenginex.domains.ai.observability.cost import CostTracker, TokenUsage
 
         t = CostTracker()
         t.record(
@@ -228,7 +228,7 @@ class TestCostTracker:
         assert abs(t.total_cost() - 0.06) < 1e-9
 
     def test_filter_by_agent(self) -> None:
-        from dataenginex.ai.observability.cost import CostTracker, TokenUsage
+        from dataenginex.domains.ai.observability.cost import CostTracker, TokenUsage
 
         t = CostTracker()
         t.record(
@@ -240,7 +240,7 @@ class TestCostTracker:
         assert abs(t.total_cost(agent_name="a") - 0.01) < 1e-9
 
     def test_summary(self) -> None:
-        from dataenginex.ai.observability.cost import CostTracker, TokenUsage
+        from dataenginex.domains.ai.observability.cost import CostTracker, TokenUsage
 
         t = CostTracker()
         t.record(TokenUsage(model="sonnet", tokens_in=100, tokens_out=50, cost_usd=0.01))
@@ -253,7 +253,7 @@ class TestCostTracker:
 
 class TestAgentMetrics:
     def test_increment_requests(self) -> None:
-        from dataenginex.ai.observability.metrics import AgentMetrics
+        from dataenginex.domains.ai.observability.metrics import AgentMetrics
 
         m = AgentMetrics()
         m.increment_requests("agent1")
@@ -261,7 +261,7 @@ class TestAgentMetrics:
         assert m._requests["agent1"] == 2
 
     def test_record_latency(self) -> None:
-        from dataenginex.ai.observability.metrics import AgentMetrics
+        from dataenginex.domains.ai.observability.metrics import AgentMetrics
 
         m = AgentMetrics()
         m.record_latency("agent1", 0.5)
@@ -276,7 +276,7 @@ class TestAgentMetrics:
 
 class TestModelRouter:
     def _providers(self) -> dict[str, Any]:
-        from dataenginex.ai.routing.router import BaseProvider
+        from dataenginex.domains.ai.providers import BaseProvider
 
         class DummyProvider(BaseProvider):
             def generate(self, prompt: str, **kwargs: Any) -> str:
@@ -289,42 +289,42 @@ class TestModelRouter:
         }
 
     def test_route_simple(self) -> None:
-        from dataenginex.ai.routing.router import ModelRouter
+        from dataenginex.providers.model.router import ModelRouter
 
         router = ModelRouter(self._providers())
         p = router.route("do something simple", complexity="simple")
         assert p is not None
 
     def test_route_moderate(self) -> None:
-        from dataenginex.ai.routing.router import ModelRouter
+        from dataenginex.providers.model.router import ModelRouter
 
         router = ModelRouter(self._providers())
         p = router.route("moderate task", complexity="moderate")
         assert p is not None
 
     def test_route_complex(self) -> None:
-        from dataenginex.ai.routing.router import ModelRouter
+        from dataenginex.providers.model.router import ModelRouter
 
         router = ModelRouter(self._providers())
         p = router.route("hard task", complexity="complex")
         assert p is not None
 
     def test_unknown_complexity_raises(self) -> None:
-        from dataenginex.ai.routing.router import ModelRouter
+        from dataenginex.providers.model.router import ModelRouter
 
         router = ModelRouter(self._providers())
         with pytest.raises(ValueError, match="Unknown complexity"):
             router.route("task", complexity="impossible")
 
     def test_missing_provider_raises(self) -> None:
-        from dataenginex.ai.routing.router import ModelRouter
+        from dataenginex.providers.model.router import ModelRouter
 
         router = ModelRouter({})  # no providers registered
         with pytest.raises(KeyError):
             router.route("task", complexity="simple")
 
     def test_base_provider_is_abstract(self) -> None:
-        from dataenginex.ai.routing.router import BaseProvider
+        from dataenginex.domains.ai.providers import BaseProvider
 
         with pytest.raises(TypeError):
             BaseProvider()  # type: ignore[abstract]
@@ -332,7 +332,7 @@ class TestModelRouter:
 
 class TestRoutingAdapters:
     def test_anthropic_no_key_raises(self) -> None:
-        from dataenginex.ai.routing.anthropic import AnthropicProvider
+        from dataenginex.providers.model.anthropic import AnthropicProvider
 
         p = AnthropicProvider(api_key="")
         with patch.dict("os.environ", {}, clear=True):
@@ -341,7 +341,7 @@ class TestRoutingAdapters:
                 p.generate("hi")
 
     def test_anthropic_generate_mocked(self) -> None:
-        from dataenginex.ai.routing.anthropic import AnthropicProvider
+        from dataenginex.providers.model.anthropic import AnthropicProvider
 
         p = AnthropicProvider(api_key="sk-ant-test")
         mock_resp = MagicMock()
@@ -354,7 +354,7 @@ class TestRoutingAdapters:
     def test_anthropic_connection_error(self) -> None:
         import httpx
 
-        from dataenginex.ai.routing.anthropic import AnthropicProvider
+        from dataenginex.providers.model.anthropic import AnthropicProvider
 
         p = AnthropicProvider(api_key="sk-ant-test")
         with (
@@ -364,7 +364,7 @@ class TestRoutingAdapters:
             p.generate("hi")
 
     def test_openai_no_key_raises(self) -> None:
-        from dataenginex.ai.routing.openai import OpenAIProvider
+        from dataenginex.providers.model.openai import OpenAIProvider
 
         p = OpenAIProvider(api_key="")
         with patch.dict("os.environ", {}, clear=True):
@@ -373,7 +373,7 @@ class TestRoutingAdapters:
                 p.generate("hi")
 
     def test_openai_generate_mocked(self) -> None:
-        from dataenginex.ai.routing.openai import OpenAIProvider
+        from dataenginex.providers.model.openai import OpenAIProvider
 
         p = OpenAIProvider(api_key="sk-test")
         mock_resp = MagicMock()
@@ -386,7 +386,7 @@ class TestRoutingAdapters:
     def test_openai_connection_error(self) -> None:
         import httpx
 
-        from dataenginex.ai.routing.openai import OpenAIProvider
+        from dataenginex.providers.model.openai import OpenAIProvider
 
         p = OpenAIProvider(api_key="sk-test")
         with (
@@ -396,7 +396,7 @@ class TestRoutingAdapters:
             p.generate("hi")
 
     def test_ollama_generate_mocked(self) -> None:
-        from dataenginex.ai.routing.ollama import OllamaProvider
+        from dataenginex.providers.model.ollama import OllamaProvider
 
         p = OllamaProvider(model="llama3")
         mock_resp = MagicMock()
@@ -409,7 +409,7 @@ class TestRoutingAdapters:
     def test_ollama_connection_error(self) -> None:
         import httpx
 
-        from dataenginex.ai.routing.ollama import OllamaProvider
+        from dataenginex.providers.model.ollama import OllamaProvider
 
         p = OllamaProvider(host="http://localhost:99999")
         with (
@@ -426,7 +426,7 @@ class TestRoutingAdapters:
 
 class TestCheckpointManager:
     def test_save_and_load(self) -> None:
-        from dataenginex.ai.runtime.checkpoint import Checkpoint, CheckpointManager
+        from dataenginex.domains.ai.runtime.checkpoint import Checkpoint, CheckpointManager
 
         mgr = CheckpointManager()
         cp = Checkpoint(agent_name="agent1", state={"step": 3}, timestamp=1.0, iteration=3)
@@ -436,13 +436,13 @@ class TestCheckpointManager:
         assert loaded.state["step"] == 3
 
     def test_load_missing_returns_none(self) -> None:
-        from dataenginex.ai.runtime.checkpoint import CheckpointManager
+        from dataenginex.domains.ai.runtime.checkpoint import CheckpointManager
 
         mgr = CheckpointManager()
         assert mgr.load("ghost") is None
 
     def test_save_overwrites(self) -> None:
-        from dataenginex.ai.runtime.checkpoint import Checkpoint, CheckpointManager
+        from dataenginex.domains.ai.runtime.checkpoint import Checkpoint, CheckpointManager
 
         mgr = CheckpointManager()
         mgr.save(Checkpoint(agent_name="a", state={"v": 1}, timestamp=1.0, iteration=1))
@@ -452,7 +452,7 @@ class TestCheckpointManager:
 
 def _make_provider(response: str) -> Any:
     """Return a mock BaseProvider that always returns *response*."""
-    from dataenginex.ai.routing.router import BaseProvider
+    from dataenginex.domains.ai.providers import BaseProvider
 
     class _Mock(BaseProvider):
         def generate(self, prompt: str, **kwargs: Any) -> str:
@@ -463,9 +463,9 @@ def _make_provider(response: str) -> Any:
 
 class TestAgentExecutor:
     def test_run_returns_final_answer(self) -> None:
-        from dataenginex.ai.memory.base import ShortTermMemory
-        from dataenginex.ai.runtime.executor import AgentConfig, AgentExecutor
-        from dataenginex.ai.tools import ToolRegistry
+        from dataenginex.domains.ai.memory.base import ShortTermMemory
+        from dataenginex.domains.ai.runtime.executor import AgentConfig, AgentExecutor
+        from dataenginex.domains.ai.tools import ToolRegistry
 
         config = AgentConfig(name="test", model="mock")
         executor = AgentExecutor(
@@ -476,10 +476,10 @@ class TestAgentExecutor:
         assert resp.iterations == 1
 
     def test_run_tool_call_then_final(self) -> None:
-        from dataenginex.ai.memory.base import ShortTermMemory
-        from dataenginex.ai.routing.router import BaseProvider
-        from dataenginex.ai.runtime.executor import AgentConfig, AgentExecutor
-        from dataenginex.ai.tools import ToolRegistry, ToolSpec
+        from dataenginex.domains.ai.memory.base import ShortTermMemory
+        from dataenginex.domains.ai.providers import BaseProvider
+        from dataenginex.domains.ai.runtime.executor import AgentConfig, AgentExecutor
+        from dataenginex.domains.ai.tools import ToolRegistry, ToolSpec
 
         registry = ToolRegistry()
         registry.register(ToolSpec(name="add", description="adds", fn=lambda a, b: a + b))
@@ -497,9 +497,9 @@ class TestAgentExecutor:
         assert resp.tool_calls[0]["tool"] == "add"
 
     def test_step_returns_step_result(self) -> None:
-        from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
-        from dataenginex.ai.runtime.executor import AgentConfig, AgentExecutor, StepResult
-        from dataenginex.ai.tools import ToolRegistry
+        from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
+        from dataenginex.domains.ai.runtime.executor import AgentConfig, AgentExecutor, StepResult
+        from dataenginex.domains.ai.tools import ToolRegistry
 
         mem = ShortTermMemory()
         mem.add(MemoryEntry(content="What is Python?", role="user"))
@@ -513,9 +513,9 @@ class TestAgentExecutor:
         assert result.result == "Python is a language."
 
     def test_run_max_iterations(self) -> None:
-        from dataenginex.ai.memory.base import ShortTermMemory
-        from dataenginex.ai.runtime.executor import AgentConfig, AgentExecutor
-        from dataenginex.ai.tools import ToolRegistry
+        from dataenginex.domains.ai.memory.base import ShortTermMemory
+        from dataenginex.domains.ai.runtime.executor import AgentConfig, AgentExecutor
+        from dataenginex.domains.ai.tools import ToolRegistry
 
         # Provider always asks for a (non-existent) tool — will hit max_iterations
         config = AgentConfig(name="test", model="mock", max_iterations=2)
@@ -537,7 +537,7 @@ class TestSandbox:
         that focus on behavior, not the warning itself."""
         import warnings
 
-        from dataenginex.ai.runtime.sandbox import ExperimentalFeatureWarning
+        from dataenginex.domains.ai.runtime.sandbox import ExperimentalFeatureWarning
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ExperimentalFeatureWarning)
@@ -547,7 +547,7 @@ class TestSandbox:
         """First instantiation in a fresh module state emits the warning."""
         import warnings
 
-        import dataenginex.ai.runtime.sandbox as sb_mod
+        import dataenginex.domains.ai.runtime.sandbox as sb_mod
 
         sb_mod._experimental_warned = False
         with warnings.catch_warnings(record=True) as caught:
@@ -556,7 +556,7 @@ class TestSandbox:
         assert any(issubclass(w.category, sb_mod.ExperimentalFeatureWarning) for w in caught)
 
     def test_run_python(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox
 
         sb = Sandbox()
         result = sb.execute_code("print('hello sandbox')", language="python")
@@ -565,14 +565,14 @@ class TestSandbox:
         assert not result.timed_out
 
     def test_run_python_error(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox
 
         sb = Sandbox()
         result = sb.execute_code("raise ValueError('oops')", language="python")
         assert result.exit_code != 0
 
     def test_run_bash(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox
 
         sb = Sandbox()
         result = sb.execute_code("echo hello_bash", language="bash")
@@ -580,7 +580,7 @@ class TestSandbox:
         assert "hello_bash" in result.output
 
     def test_timeout(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox, SandboxConfig
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox, SandboxConfig
 
         cfg = SandboxConfig(timeout_s=1)
         sb = Sandbox(config=cfg)
@@ -588,14 +588,14 @@ class TestSandbox:
         assert result.timed_out
 
     def test_unsupported_language_raises(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox, UnsupportedLanguageError
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox, UnsupportedLanguageError
 
         sb = Sandbox()
         with pytest.raises(UnsupportedLanguageError):
             sb.execute_code("console.log('hi')", language="javascript")
 
     def test_metadata_contains_language(self) -> None:
-        from dataenginex.ai.runtime.sandbox import Sandbox
+        from dataenginex.domains.ai.runtime.sandbox import Sandbox
 
         sb = Sandbox()
         result = sb.execute_code("print(1)", language="python")
@@ -609,46 +609,46 @@ class TestSandbox:
 
 class TestCondition:
     def test_eq(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("status", "eq", "ok")
         assert c.evaluate({"status": "ok"}) is True
         assert c.evaluate({"status": "fail"}) is False
 
     def test_ne(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("status", "ne", "ok")
         assert c.evaluate({"status": "fail"}) is True
 
     def test_gt(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("score", "gt", 0.5)
         assert c.evaluate({"score": 0.9}) is True
         assert c.evaluate({"score": 0.3}) is False
 
     def test_lt(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("score", "lt", 0.5)
         assert c.evaluate({"score": 0.1}) is True
 
     def test_contains(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("tags", "contains", "prod")
         assert c.evaluate({"tags": ["prod", "v2"]}) is True
         assert c.evaluate({"tags": ["dev"]}) is False
 
     def test_unknown_operator_raises(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         with pytest.raises(ValueError, match="Unknown operator"):
             Condition("x", "magic", "y")
 
     def test_missing_field_raises(self) -> None:
-        from dataenginex.ai.workflows.conditions import Condition
+        from dataenginex.domains.ai.workflows.conditions import Condition
 
         c = Condition("missing_key", "eq", "x")
         with pytest.raises(KeyError):
@@ -657,8 +657,8 @@ class TestCondition:
 
 class TestAgentDAG:
     def test_add_nodes_and_edges(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -668,8 +668,8 @@ class TestAgentDAG:
         assert len(dag._edges) == 1
 
     def test_validate_no_cycle(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -680,8 +680,8 @@ class TestAgentDAG:
         assert dag.validate() is True
 
     def test_validate_detects_cycle(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -691,8 +691,8 @@ class TestAgentDAG:
         assert dag.validate() is False
 
     def test_execute_with_providers(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("step1", AgentConfig(name="step1", model="mock"))
@@ -708,8 +708,8 @@ class TestAgentDAG:
         assert results["step2"] == "output_from_step2"
 
     def test_execute_cycle_raises(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -720,8 +720,8 @@ class TestAgentDAG:
             dag.execute()
 
     def test_execute_no_provider_placeholder(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
-        from dataenginex.ai.workflows.dag import AgentDAG
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.workflows.dag import AgentDAG
 
         dag = AgentDAG()
         dag.add_node("orphan", AgentConfig(name="orphan", model="mock"))
@@ -731,28 +731,28 @@ class TestAgentDAG:
 
 class TestApprovalGate:
     def test_approve_yes(self) -> None:
-        from dataenginex.ai.workflows.human_loop import ApprovalGate
+        from dataenginex.domains.ai.workflows.human_loop import ApprovalGate
 
         gate = ApprovalGate("Deploy to production?")
         with patch("builtins.input", return_value="y"):
             assert gate.request_approval({"env": "prod"}) is True
 
     def test_approve_no(self) -> None:
-        from dataenginex.ai.workflows.human_loop import ApprovalGate
+        from dataenginex.domains.ai.workflows.human_loop import ApprovalGate
 
         gate = ApprovalGate("Deploy to production?")
         with patch("builtins.input", return_value="n"):
             assert gate.request_approval({"env": "prod"}) is False
 
     def test_approve_eof_returns_false(self) -> None:
-        from dataenginex.ai.workflows.human_loop import ApprovalGate
+        from dataenginex.domains.ai.workflows.human_loop import ApprovalGate
 
         gate = ApprovalGate("Approve?")
         with patch("builtins.input", side_effect=EOFError):
             assert gate.request_approval({}) is False
 
     def test_description_and_timeout_stored(self) -> None:
-        from dataenginex.ai.workflows.human_loop import ApprovalGate
+        from dataenginex.domains.ai.workflows.human_loop import ApprovalGate
 
         gate = ApprovalGate("Review data", timeout_seconds=60)
         assert gate.description == "Review data"

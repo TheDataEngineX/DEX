@@ -5,6 +5,8 @@ Defines the contract for ML models tracked by DEX.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import Field
 
 from dataenginex.foundation.projects import FrozenModel
@@ -18,6 +20,6 @@ class ModelContract(FrozenModel):
     model_name: str
     version: str
     framework: str  # spark_mllib, mlflow, custom
-    metrics: dict = Field(default_factory=dict)
+    metrics: dict[str, Any] = Field(default_factory=dict)
     artifact_path: str | None = None
     dataset_version: str | None = None

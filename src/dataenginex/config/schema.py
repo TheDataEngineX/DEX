@@ -15,7 +15,6 @@ from dataenginex.config.defaults import (
     DEFAULT_AGENT_RUNTIME,
     DEFAULT_DRIFT_METHOD,
     DEFAULT_DRIFT_THRESHOLD,
-    DEFAULT_ENGINE,
     DEFAULT_FEATURE_STORE,
     DEFAULT_LLM_MODEL,
     DEFAULT_LLM_PROVIDER,
@@ -90,10 +89,24 @@ class QualityCheckConfig(FrozenModel):
     custom_sql: str | None = None
 
 
+class SparkConfig(FrozenModel):
+    """Spark-specific engine configuration."""
+
+    master: str = "local[*]"
+    warehouse: str = ".dex/lakehouse"
+    file_format: str = "parquet"  # parquet, delta, iceberg
+    executor_memory: str | None = None
+    executor_cores: int | None = None
+    driver_memory: str | None = None
+    packages: list[str] = Field(default_factory=list)
+    conf: dict[str, str] = Field(default_factory=dict)
+
+
 class PipelineConfig(FrozenModel):
     """A named data pipeline."""
 
     source: str  # reference to a named source
+    engine: Literal["duckdb", "spark", "auto"] = "duckdb"
     transforms: list[TransformStepConfig] = Field(default_factory=list)
     quality: QualityCheckConfig | None = None
     destination: str | None = None
@@ -103,14 +116,16 @@ class PipelineConfig(FrozenModel):
     orm_sink: dict[str, str] | None = None
     schedule: str | None = None  # cron expression
     on_failure: Literal["fail", "skip", "stale"] = "fail"  # ponytail: fail-fast default
+    spark: SparkConfig | None = None  # per-pipeline spark overrides
 
 
 class DataConfig(FrozenModel):
     """Data layer configuration."""
 
-    engine: str = DEFAULT_ENGINE
+    engine: Literal["duckdb", "spark", "auto"] = "duckdb"
     sources: dict[str, SourceConfig] = Field(default_factory=dict)
     pipelines: dict[str, PipelineConfig] = Field(default_factory=dict)
+    spark: SparkConfig | None = None  # project-level spark defaults
 
 
 # --- ML Layer ---
@@ -370,9 +385,25 @@ class ObservabilityConfig(FrozenModel):
 class DexConfig(FrozenModel):
     """Root configuration model — one ``dex.yaml`` defines everything.
 
-    Only ``project`` is required. All other sections have sensible defaults.
+    v0.7 adds apiVersion, kind, and spec-level engine/spark/governance config.
+    Only ``project`` is required for backward compatibility. All other sections
+    have sensible defaults.
     """
 
+    # v0.7 manifest fields
+    apiVersion: str = "dex/v0.7"
+    kind: str = "Project"
+    # v0.7 spec-level config
+    # auto: resolve from pipeline engine; lite: duckdb; spark-local: local[*];
+    # spark-connect: remote; home-server: single-laptop; distributed: cluster
+    runtime_profile: str = "auto"
+    imports: list[str] = Field(default_factory=list)
+    governance_external_data: str = "deny"  # deny, approve, allow
+    governance_classification: str = "internal"  # public, internal, confidential, restricted
+    resource_max_cpu: int | None = None
+    resource_max_memory: str | None = None
+
+    # Existing config sections
     project: ProjectConfig
     data: DataConfig = Field(default_factory=DataConfig)
     ml: MlConfig = Field(default_factory=MlConfig)

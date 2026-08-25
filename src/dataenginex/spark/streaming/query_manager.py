@@ -42,7 +42,7 @@ class StreamingQueryManager:
     ) -> None:
         self.project_id = project_id
         self._spark = spark_session
-        self._queries: dict[str, dict] = {}
+        self._queries: dict[str, dict[str, Any]] = {}
         self._streaming_queries: dict[str, Any] = {}
         self._checkpoint_base_path = checkpoint_base_path
 
@@ -58,7 +58,7 @@ class StreamingQueryManager:
     def register(
         self,
         query_id: str,
-        config: dict,
+        config: dict[str, Any],
         query: Any | None = None,
     ) -> None:
         """Register a streaming query for tracking.
@@ -103,7 +103,7 @@ class StreamingQueryManager:
         self._queries.pop(query_id, None)
         logger.info("streaming query deregistered", query_id=query_id)
 
-    def active_queries(self) -> list[dict]:
+    def active_queries(self) -> list[dict[str, Any]]:
         """Get list of active streaming queries.
 
         Returns:
@@ -111,7 +111,7 @@ class StreamingQueryManager:
         """
         return [{"id": k, **v} for k, v in self._queries.items()]
 
-    def get_status(self, query_id: str) -> dict | None:
+    def get_status(self, query_id: str) -> dict[str, Any] | None:
         """Get status of a specific query.
 
         Args:
@@ -122,7 +122,9 @@ class StreamingQueryManager:
         """
         return self._queries.get(query_id)
 
-    def update_status(self, query_id: str, status: str, metadata: dict | None = None) -> None:
+    def update_status(
+        self, query_id: str, status: str, metadata: dict[str, Any] | None = None
+    ) -> None:
         """Update query status.
 
         Args:
@@ -139,10 +141,10 @@ class StreamingQueryManager:
     def start_query(
         self,
         query_id: str,
-        source_config: dict,
-        sink_config: dict,
+        source_config: dict[str, Any],
+        sink_config: dict[str, Any],
         processing_time: str = "10 seconds",
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Start a streaming query.
 
         Args:
@@ -197,7 +199,7 @@ class StreamingQueryManager:
                 "error": str(exc),
             }
 
-    def stop_query(self, query_id: str) -> dict:
+    def stop_query(self, query_id: str) -> dict[str, Any]:
         """Stop a streaming query.
 
         Args:
@@ -219,7 +221,7 @@ class StreamingQueryManager:
             logger.error("failed to stop query", query_id=query_id, error=str(exc))
             return {"status": "error", "error": str(exc)}
 
-    def get_query_metrics(self, query_id: str) -> dict:
+    def get_query_metrics(self, query_id: str) -> dict[str, Any]:
         """Get metrics for a streaming query.
 
         Args:
@@ -250,7 +252,7 @@ class StreamingQueryManager:
         except Exception as exc:
             return {"error": str(exc)}
 
-    def _build_streaming_df(self, source_config: dict) -> Any:
+    def _build_streaming_df(self, source_config: dict[str, Any]) -> Any:
         """Build streaming DataFrame from source config.
 
         Args:
@@ -261,6 +263,10 @@ class StreamingQueryManager:
         """
         source_type = source_config.get("type", "kafka")
         options = source_config.get("options", {})
+
+        if self._spark is None:
+            msg = "Spark session not initialized"
+            raise RuntimeError(msg)
 
         if source_type == "kafka":
             return (
@@ -287,7 +293,7 @@ class StreamingQueryManager:
     def _configure_sink(
         self,
         df: Any,
-        sink_config: dict,
+        sink_config: dict[str, Any],
         processing_time: str,
         query_id: str,
     ) -> Any:
@@ -337,7 +343,7 @@ class StreamingQueryManager:
             msg = f"Unsupported sink type: {sink_type}"
             raise ValueError(msg)
 
-    def cleanup_checkpoints(self, query_id: str | None = None) -> dict:
+    def cleanup_checkpoints(self, query_id: str | None = None) -> dict[str, Any]:
         """Clean up checkpoint files.
 
         Args:

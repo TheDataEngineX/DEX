@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.ai.tools.builtin import (
+from dataenginex.domains.ai.tools.builtin import (
     _echo,
     _list_tools,
     _referenced_table_names,

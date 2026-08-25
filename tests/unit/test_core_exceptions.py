@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataenginex.core.exceptions import (
+from dataenginex.foundation.errors import (
     BackendNotInstalledError,
     ConfigError,
     ConfigValidationError,

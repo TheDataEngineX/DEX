@@ -1,84 +1,86 @@
-# dataenginex.config
+# Config
 
-Config schema, loader, settings, and defaults. The `dex.yaml` file is parsed into a typed `DexConfig` object that drives the engine.
-
-## Quick import
+YAML config loading and validation for `dex.yaml`.
 
 ```python
-from dataenginex.config import DexConfig, load_config, DexSettings
-```
-
-______________________________________________________________________
-
-## Schema
-
-`dataenginex.config.schema`
-
-Pydantic models for `dex.yaml`. Covers pipelines, connectors, transforms, ML, AI, secops, and lakehouse config blocks.
-
-::: dataenginex.config.schema
-
-**Key model:** `DexConfig`
-
-```python
-from dataenginex.config.schema import DexConfig
-
-config = DexConfig.model_validate({
-    "pipelines": {
-        "ingest_events": {
-            "source": {"type": "csv", "path": "data/raw/events.csv"},
-            "destination": {"type": "parquet", "path": "data/bronze/events"},
-        }
-    }
-})
-```
-
-______________________________________________________________________
-
-## Loader
-
-`dataenginex.config.loader`
-
-Loads and validates `dex.yaml` (or a custom path) with environment variable interpolation and secret resolution.
-
-::: dataenginex.config.loader
-
-**Key function:** `load_config`
-
-```python
-from dataenginex.config.loader import load_config
+from dataenginex.config import load_config, validate_config
 
 config = load_config("dex.yaml")
+validate_config(config)
 ```
 
-______________________________________________________________________
+## Functions
 
-## Settings
-
-`dataenginex.config.settings`
-
-Runtime settings sourced from environment variables (`.env` or system env). Declares typed fields for well-known vars (e.g. `tmdb_api_key`); any other `.env`/env var is still picked up and exposed via `as_env_dict()` for `${VAR}` interpolation in `dex.yaml`.
-
-::: dataenginex.config.settings
-
-**Key class:** `DexSettings`
+### `load_config`
 
 ```python
-from dataenginex.config.settings import DexSettings
-
-settings = DexSettings()
-print(settings.tmdb_api_key)          # "" unless TMDB_API_KEY is set
-print(settings.get("SOME_ENV_VAR"))   # case-insensitive lookup across .env + os.environ
+load_config(path: str | Path) -> DexConfig
 ```
 
-See `.env.template` in the project root for all available settings.
+Load and parse a `dex.yaml` file. Resolves `${ENV_VAR}` references. Raises `ConfigError` if the file is missing or invalid.
 
-______________________________________________________________________
+### `validate_config`
 
-## Defaults
+```python
+validate_config(config: DexConfig) -> None
+```
 
-`dataenginex.config.defaults`
+Validate config against the schema. Raises `ConfigError` with details on invalid fields.
 
-Default values applied when config keys are omitted.
+### `resolve_env_vars`
 
-::: dataenginex.config.defaults
+```python
+resolve_env_vars(config: dict) -> dict
+```
+
+Resolve `${ENV_VAR}` and `${ENV_VAR:-default}` references in config values.
+
+## DexConfig Schema
+
+The `DexConfig` Pydantic model defines the full config structure:
+
+```yaml
+project:
+  name: string
+  version: string
+
+data:
+  sources:
+    <name>:
+      type: csv | parquet | postgres | spark | dbt | ...
+      connection:
+        path: string
+        default_file: string
+  pipelines:
+    <name>:
+      source: string
+      engine: duckdb | spark | auto
+      destination: string
+      schedule: string  # cron expression
+      transforms:
+        - type: filter | cast | derive | sql | ...
+          condition: string
+      quality:
+        row_count_min: int
+
+ml:
+  models:
+    <name>:
+      algorithm: string
+      features: list[string]
+
+ai:
+  default_model: string
+  embedding_model: string
+  agents:
+    <name>:
+      runtime: builtin | langchain
+      system_prompt: string
+
+secops:
+  audit:
+    enabled: bool
+    db_path: string
+  guard:
+    enabled: bool
+```

@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from dataenginex.core.interfaces import (
+from dataenginex.foundation.plugin_contracts import (
     BaseAgentRuntime,
     BaseConnector,
     BaseFeatureStore,

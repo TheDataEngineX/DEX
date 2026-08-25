@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.data.connectors.duckdb import DuckDBConnector
+from dataenginex.providers.connectors.duckdb import DuckDBConnector
 from tests.conformance.test_connector import ConnectorConformanceTests
 
 

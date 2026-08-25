@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thedataenginex.org/schemas/dex-v0.7.json",
+  "title": "DEX Project Manifest v0.7",
+  "description": "Top-level project manifest for DEX v0.7",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "dex/v0.7",
+      "description": "Manifest schema version"
+    },
+    "kind": {
+      "type": "string",
+      "const": "Project",
+      "description": "Resource kind"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9\\-]{0,62}$",
+          "description": "Project name (lowercase, alphanumeric, hyphens)"
+        },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "required": ["runtime"],
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "type": "string",
+              "enum": ["auto", "lite", "spark-local", "spark-connect", "home-server", "distributed"],
+              "default": "auto"
+            }
+          },
+          "additionalProperties": false
+        },
+        "engines": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
+                "default": {
+                  "type": "string",
+                  "enum": ["spark", "duckdb", "auto"],
+                  "default": "auto"
+                },
+                "portableSql": {
+                  "type": "string",
+                  "enum": ["duckdb", "spark", "auto"],
+                  "default": "auto"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "imports": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Glob patterns for imported manifest files"
+        },
+        "spark": {
+          "type": "object",
+          "properties": {
+            "pipelines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "path"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "path": { "type": "string" }
+                },
+                "additionalProperties": false
+              }
+            },
+            "session": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": ["local", "connect", "standalone", "kubernetes"],
+                  "default": "local"
+                },
+                "appname": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "maxCpu": { "type": "integer", "minimum": 1 },
+            "maxMemory": { "type": "string" },
+            "maxDisk": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "governance": {
+          "type": "object",
+          "properties": {
+            "externalData": {
+              "type": "string",
+              "enum": ["deny", "approve", "allow"],
+              "default": "deny"
+            },
+            "classification": {
+              "type": "string",
+              "enum": ["public", "internal", "confidential", "restricted"],
+              "default": "internal"
+            }
+          },
+          "additionalProperties": false
+        },
+        "schedules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "cron", "workload"],
+            "properties": {
+              "name": { "type": "string" },
+              "cron": { "type": "string" },
+              "workload": { "type": "string" },
+              "enabled": { "type": "boolean", "default": true }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

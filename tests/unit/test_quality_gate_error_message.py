@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 
 from dataenginex.config.loader import load_config
-from dataenginex.core.exceptions import PipelineStepError
-from dataenginex.data.pipeline.runner import PipelineRunner
+from dataenginex.domains.data.pipeline.runner import PipelineRunner
+from dataenginex.foundation.errors import PipelineStepError
 
 
 @pytest.fixture()

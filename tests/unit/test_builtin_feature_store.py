@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.ml.features.builtin import BuiltinFeatureStore
+from dataenginex.domains.ml.features.builtin import BuiltinFeatureStore
 from tests.conformance.test_feature_store import FeatureStoreConformanceTests
 
 

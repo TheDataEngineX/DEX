@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thedataenginex.org/schemas/policy-v0.7.json",
+  "title": "DEX Policy Definition v0.7",
+  "description": "Policy definitions for DEX governance",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "dex/v0.7"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["Policy", "NetworkPolicy", "EgressPolicy", "AccessPolicy"]
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": ["permit", "deny"],
+          "default": "deny"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "effect": {
+                "type": "string",
+                "enum": ["permit", "deny", "require_approval"]
+              },
+              "principal": { "type": "string" },
+              "action": { "type": "string" },
+              "resource": { "type": "string" },
+              "destination": { "type": "string" },
+              "classification": { "type": "string" },
+              "conditions": { "type": "object" },
+              "obligations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string" },
+                    "params": { "type": "object" }
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "allow": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "host": { "type": "string" },
+              "operations": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "purpose": { "type": "string" }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

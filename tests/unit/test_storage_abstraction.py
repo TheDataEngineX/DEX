@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from dataenginex.lakehouse.storage import JsonStorage, get_storage
+from dataenginex.providers.object_store.storage import JsonStorage, get_storage
 
 # ---------------------------------------------------------------------------
 # JsonStorage.list_objects / .exists
@@ -86,14 +86,14 @@ class TestGetStorage:
 
     def test_s3_scheme(self) -> None:
         """S3Storage is created (even without credentials)."""
-        from dataenginex.lakehouse.storage import S3Storage
+        from dataenginex.providers.object_store.storage import S3Storage
 
         store = get_storage("s3://my-bucket/prefix", endpoint_url="http://localhost:1")
         assert isinstance(store, S3Storage)
 
     def test_gs_scheme(self) -> None:
         """GCSStorage is created (even without credentials)."""
-        from dataenginex.lakehouse.storage import GCSStorage
+        from dataenginex.providers.object_store.storage import GCSStorage
 
         store = get_storage("gs://my-bucket/prefix", api_endpoint="http://localhost:1")
         assert isinstance(store, GCSStorage)
@@ -102,7 +102,7 @@ class TestGetStorage:
         """BigQueryStorage is created via bq:// URI."""
         from unittest.mock import MagicMock
 
-        from dataenginex.lakehouse.storage import BigQueryStorage
+        from dataenginex.providers.object_store.storage import BigQueryStorage
 
         mock_client = MagicMock()
         store = get_storage("bq://my-project/my_dataset", client=mock_client)
@@ -121,12 +121,12 @@ class TestBigQueryStorage:
     def bq_store(self) -> Any:
         from unittest.mock import MagicMock, patch
 
-        from dataenginex.lakehouse.storage import BigQueryStorage
+        from dataenginex.providers.object_store.storage import BigQueryStorage
 
         mock_client = MagicMock()
         mock_bq_module = MagicMock()
-        patcher_flag = patch("dataenginex.lakehouse.storage._HAS_BIGQUERY", True)
-        patcher_mod = patch("dataenginex.lakehouse.storage.bq_client", mock_bq_module)
+        patcher_flag = patch("dataenginex.providers.object_store.storage._HAS_BIGQUERY", True)
+        patcher_mod = patch("dataenginex.providers.object_store.storage.bq_client", mock_bq_module)
         patcher_flag.start()
         patcher_mod.start()
 
@@ -217,7 +217,7 @@ class TestBigQueryStorage:
 
     def test_no_client_operations(self) -> None:
         """When _client is None, operations return safe defaults."""
-        from dataenginex.lakehouse.storage import BigQueryStorage
+        from dataenginex.providers.object_store.storage import BigQueryStorage
 
         store = BigQueryStorage.__new__(BigQueryStorage)
         store.project_id = "p"

@@ -66,6 +66,8 @@ desktop.ini
 *.log
 *.sqlite3
 *.duckdb
+*.duckdb.wal
+*.duckdb.tmp
 logs/
 .dex/
 
@@ -87,11 +89,13 @@ Notes.txt
 
 # Claude Code — local overrides (personal, never commit)
 .claude/settings.local.json
+.claude/.headroom_wrap_marker.json
 .superpowers/
 
 # AI Coding Assistant
 .continue/
 .playwright-mcp/
+.serena/
 
 # Local task notes (tracked separately)
 tasks/todo.md

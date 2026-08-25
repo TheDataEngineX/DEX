@@ -9,9 +9,12 @@ Goal is to save Claude code tokens for lower cost without losing quality.
 
 **DataEngineX** — unified Data + ML + AI library. Config-driven, self-hosted, local-first. Pure Python — no bundled HTTP server.
 
-| Package | Location | Purpose |
-|---------|----------|---------|
-| `dataenginex` | `src/dataenginex/` | Core library — config, registry, CLI, pipelines, ML, AI, PrivacyGuard |
+| Directory | Purpose |
+|-----------|---------|
+| `src/dataenginex/` | Core library — engine, domains, providers, foundation, CLI |
+| `schemas/` | Published JSON Schema for manifests |
+| `tests/` | Unit, integration, and architecture tests |
+| `docs/` | Design specs and integration plans |
 
 **Stack:** Python 3.13+ · DuckDB · SQLite (WAL, persistence store) · structlog · Pydantic · Click · pyarrow · croniter · httpx · prometheus-client · uv · Ruff · mypy strict · pytest
 
@@ -27,25 +30,20 @@ ______________________________________________________________________
 # Quality
 uv run poe lint           # Ruff lint
 uv run poe lint-fix       # Ruff lint + auto-fix
-uv run poe typecheck      # mypy --strict (src/dataenginex/ only)
+uv run poe typecheck      # mypy --strict
 uv run poe check-all      # lint + typecheck + test
 
 # Test
-uv run poe test           # All tests
-uv run poe test-unit      # Unit tests only
-uv run poe test-integration  # Integration tests only
-uv run poe test-cov       # Tests with coverage
+uv run poe test           # Core library tests
+uv run poe test-cov       # tests + coverage
 
 # CLI
 dex validate dex.yaml     # Validate config file
 dex version               # Show version + environment
 
-# Dev
-uv run poe dev            # Dev server (uvicorn reload, port 17000) — for examples/API testing only (dataenginex has no built-in HTTP server)
-
 # Deps
-uv run poe uv-sync        # Sync deps from lockfile
-uv run poe uv-lock        # Regenerate lockfile
+uv sync                   # Sync dependencies
+uv lock                   # Regenerate lockfile
 uv run poe security       # Audit deps for vulnerabilities
 ```
 
@@ -53,9 +51,7 @@ uv run poe security       # Audit deps for vulnerabilities
 
 ```bash
 pip install "dataenginex[cloud]"        # S3, GCS, BigQuery connectors
-pip install "dataenginex[postgres]"     # asyncpg for Postgres lineage
 pip install "dataenginex[qdrant]"       # Qdrant vector store
-pip install "dataenginex[queue]"        # arq background jobs
 pip install "dataenginex[delta]"        # Delta Lake connector
 pip install "dataenginex[pytorch]"      # PyTorch ML
 pip install 'litellm>=1.83.3' --no-deps # LLM routing (separate: pins python-dotenv)

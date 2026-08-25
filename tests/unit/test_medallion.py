@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.core.medallion_architecture import (
+from dataenginex.domains.data.medallion import (
     DataLayer,
     DataLineage,
     LayerConfiguration,

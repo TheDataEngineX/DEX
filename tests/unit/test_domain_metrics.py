@@ -1,10 +1,10 @@
-"""Tests for dataenginex.middleware.domain_metrics."""
+"""Tests for dataenginex.runtime.telemetry."""
 
 from __future__ import annotations
 
 from prometheus_client import REGISTRY
 
-from dataenginex.middleware.domain_metrics import (
+from dataenginex.runtime.telemetry import (
     ai_agent_iterations,
     ai_tokens_total,
     ai_tool_calls_total,
@@ -13,7 +13,6 @@ from dataenginex.middleware.domain_metrics import (
     pipeline_run_duration_seconds,
     pipeline_runs_total,
     quality_gate_evaluations_total,
-    tenant_operations_total,
 )
 
 
@@ -30,7 +29,6 @@ class TestMetricRegistration:
                 ai_agent_iterations,
                 ai_tool_calls_total,
                 quality_gate_evaluations_total,
-                tenant_operations_total,
             )
         }
         assert "dex_domain_pipeline_runs" in names or "dex_domain_pipeline_runs_total" in names
@@ -91,9 +89,6 @@ class TestGovernanceMetrics:
         quality_gate_evaluations_total.labels(
             pipeline="p1", gate="completeness", result="pass"
         ).inc()
-
-    def test_tenant_operations_counter(self) -> None:
-        tenant_operations_total.labels(tenant="acme", operation="pipeline_run", status="ok").inc()
 
 
 def _counter_value(metric: str, labels: dict[str, str]) -> float:

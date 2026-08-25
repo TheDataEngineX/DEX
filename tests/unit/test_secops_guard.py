@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from dataenginex.ai.routing.guarded import GuardedProvider
-from dataenginex.ai.routing.router import BaseProvider
+from dataenginex.domains.ai.providers import BaseProvider
+from dataenginex.providers.model.guarded import GuardedProvider
 from dataenginex.secops import (
     AuditLogger,
     MaskingEngine,
