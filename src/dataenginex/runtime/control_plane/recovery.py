@@ -109,7 +109,7 @@ class RecoveryManager:
         rows = self.store.query(
             "SELECT p.project_id, p.active_revision_id, r.status "
             "FROM projects p "
-            "LEFT JOIN revisions r ON p.active_revision_id = r.revision_id "
+            "LEFT JOIN project_revisions r ON p.active_revision_id = r.revision_id "
             "WHERE p.active_revision_id IS NOT NULL"
         )
         count = 0

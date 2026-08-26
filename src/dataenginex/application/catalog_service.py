@@ -18,15 +18,15 @@ __all__ = ["CatalogService", "CatalogEntry"]
 class CatalogEntry:
     """Read-only projection of a catalog resource."""
 
-    def __init__(self, row: dict[str, Any]) -> None:
-        self.resource_id = row["resource_id"]
-        self.name = row["name"]
-        self.resource_type = row["resource_type"]
-        self.project_id = row["project_id"]
-        self.classification = row.get("classification", "internal")
-        self.lifecycle_state = row.get("lifecycle_state", "active")
-        self.provider = row.get("provider")
-        self.description = row.get("description", "")
+    def __init__(self, row: Any) -> None:
+        d = dict(row)
+        self.resource_id = d["resource_id"]
+        self.name = d["name"]
+        self.resource_type = d["resource_type"]
+        self.project_id = d["project_id"]
+        self.classification = d.get("classification", "internal")
+        self.lifecycle_state = d.get("lifecycle_state", "active")
+        self.description = d.get("description", "")
 
 
 class CatalogService(Service):
@@ -44,21 +44,22 @@ class CatalogService(Service):
         schema_info: dict[str, Any] | None = None,
     ) -> ResourceId:
         """Register a new resource in the catalog."""
+        from dataenginex.foundation.projects import utcnow
         resource_id = ResourceId(f"res_{name}")
         self.store.query_one(
-            "INSERT INTO catalog_entries "
-            "(resource_id, name, resource_type, project_id, classification, "
-            "provider, description, lifecycle_state) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (resource_id, name, resource_type, project_id, classification,
-             provider, description, LifecycleState.ACTIVE.value),
+            "INSERT INTO resources "
+            "(resource_id, project_id, revision_id, resource_type, name, description, "
+            "classification, lifecycle_state, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (resource_id, project_id, "draft", resource_type, name, description,
+             classification, LifecycleState.ACTIVE.value, utcnow().isoformat()),
         )
         return resource_id
 
     def get_resource(self, resource_id: ResourceId) -> CatalogEntry:
         """Fetch a resource by ID."""
         row = self.require_row(
-            "SELECT * FROM catalog_entries WHERE resource_id = ?",
+            "SELECT * FROM resources WHERE resource_id = ?",
             (resource_id,),
             subject=f"resource {resource_id}",
         )
@@ -86,7 +87,7 @@ class CatalogService(Service):
             params.append(classification)
 
         where = "WHERE " + " AND ".join(conditions) if conditions else ""
-        sql = f"SELECT * FROM catalog_entries {where} ORDER BY name LIMIT ?"
+        sql = f"SELECT * FROM resources {where} ORDER BY name LIMIT ?"
         params.append(limit)
         rows = self.store.query(sql, tuple(params))
         return [CatalogEntry(dict(r)) for r in rows]
@@ -118,7 +119,7 @@ class CatalogService(Service):
         if not updates:
             return
         params.append(resource_id)
-        sql = f"UPDATE catalog_entries SET {', '.join(updates)} WHERE resource_id = ?"
+        sql = f"UPDATE resources SET {', '.join(updates)} WHERE resource_id = ?"
         self.store.query_one(sql, tuple(params))
 
     def delete_resource(self, resource_id: ResourceId) -> None:

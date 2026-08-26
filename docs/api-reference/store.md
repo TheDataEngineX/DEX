@@ -86,6 +86,12 @@ DexStore(db_path: Path) -> None
 | `all_catalog` | `() -> list[CatalogEntry]` | All entries |
 | `delete_catalog` | `(name: str) -> None` | Delete entry |
 
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `all_events` | `list[LineageEvent]` | All lineage events in the store |
+
 ## Data Classes
 
 | Class | Description |

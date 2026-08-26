@@ -32,8 +32,7 @@ src/dataenginex/
 ├── secops/                # PII guard, audit, masking, policies
 ├── orm/                   # SQLAlchemy ORM models
 ├── api/                   # REST/GraphQL error types
-├── ai/                    # LLM client, prompts, tools
-└── lakehouse/             # Lakehouse layout helpers
+└── middleware/            # Logging config, Prometheus metrics
 ```
 
 ## Design principles

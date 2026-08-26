@@ -38,17 +38,17 @@ class ExportService(Service):
         """
         # Get the active revision
         revision_id = self.active_revision(project_id)
-        rev_row = self.require_row(
-            "SELECT * FROM revisions WHERE revision_id = ?",
+        rev_row = dict(self.require_row(
+            "SELECT * FROM project_revisions WHERE revision_id = ?",
             (revision_id,),
             subject=f"revision {revision_id}",
-        )
+        ))
 
-        project_row = self.require_row(
+        project_row = dict(self.require_row(
             "SELECT * FROM projects WHERE project_id = ?",
             (project_id,),
             subject=f"project {project_id}",
-        )
+        ))
 
         # Create output directory
         project_dir = output_dir / project_row["name"]
@@ -104,11 +104,15 @@ class ExportService(Service):
         name = manifest.get("metadata", {}).get("name", source_dir.name)
 
         # Create the project (the project service handles the actual creation)
+        from dataenginex.foundation.projects import utcnow
         project_id = ProjectId(f"proj_{name}")
         self.store.query_one(
-            "INSERT INTO projects (project_id, workspace_id, name, description) "
-            "VALUES (?, ?, ?, ?)",
-            (project_id, workspace_id, name, manifest.get("metadata", {}).get("description", "")),
+            "INSERT INTO projects "
+            "(project_id, workspace_id, name, description, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (project_id, workspace_id, name,
+             manifest.get("metadata", {}).get("description", ""),
+             utcnow().isoformat()),
         )
 
         return project_id

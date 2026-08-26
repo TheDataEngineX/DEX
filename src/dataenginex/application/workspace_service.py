@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataenginex.application.services import Service
 from dataenginex.foundation.ids import InstallationId, PrincipalId, ProjectId, WorkspaceId
+from dataenginex.foundation.projects import utcnow
 from dataenginex.foundation.workspaces import Workspace, WorkspaceMember, WorkspaceMemberRole
 
 __all__ = ["WorkspaceService", "WorkspaceView"]
@@ -47,9 +48,9 @@ class WorkspaceService(Service):
             ),
         )
         self.store.query_one(
-            "INSERT INTO workspaces (workspace_id, installation_id, name, description) "
+            "INSERT INTO workspaces (workspace_id, installation_id, name, created_at) "
             "VALUES (?, ?, ?, ?)",
-            (ws.workspace_id, ws.installation_id, ws.name, ws.description),
+            (ws.workspace_id, ws.installation_id, ws.name, utcnow().isoformat()),
         )
         return ws
 
@@ -64,7 +65,6 @@ class WorkspaceService(Service):
             workspace_id=row["workspace_id"],
             installation_id=row["installation_id"],
             name=row["name"],
-            description=row.get("description", ""),
         )
 
     def list_workspaces(self) -> list[WorkspaceView]:
@@ -76,7 +76,6 @@ class WorkspaceService(Service):
                     workspace_id=r["workspace_id"],
                     installation_id=r["installation_id"],
                     name=r["name"],
-                    description=dict(r).get("description", ""),
                 )
             )
             for r in rows
@@ -89,16 +88,17 @@ class WorkspaceService(Service):
         role: WorkspaceMemberRole = WorkspaceMemberRole.MEMBER,
     ) -> None:
         """Add a member to a workspace."""
+        from dataenginex.foundation.projects import utcnow
         self.store.query_one(
-            "INSERT OR IGNORE INTO workspace_members (workspace_id, principal_id, role) "
-            "VALUES (?, ?, ?)",
-            (workspace_id, principal_id, role.value),
+            "INSERT OR IGNORE INTO memberships (workspace_id, principal_id, role, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (workspace_id, principal_id, role.value, utcnow().isoformat()),
         )
 
     def remove_member(self, workspace_id: WorkspaceId, principal_id: PrincipalId) -> None:
         """Remove a member from a workspace."""
         self.store.query_one(
-            "DELETE FROM workspace_members WHERE workspace_id = ? AND principal_id = ?",
+            "DELETE FROM memberships WHERE workspace_id = ? AND principal_id = ?",
             (workspace_id, principal_id),
         )
 
@@ -111,5 +111,5 @@ class WorkspaceService(Service):
 
     def _installation_id(self) -> InstallationId:
         """Get the current installation ID."""
-        row = self.store.query_one("SELECT installation_id FROM installation LIMIT 1", ())
+        row = self.store.query_one("SELECT installation_id FROM installations LIMIT 1", ())
         return InstallationId(row["installation_id"] if row else "inst_default")

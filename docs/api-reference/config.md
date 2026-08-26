@@ -14,7 +14,7 @@ validate_config(config)
 ### `load_config`
 
 ```python
-load_config(path: str | Path) -> DexConfig
+load_config(path: Path, *, overlay: Path | None = None) -> DexConfig
 ```
 
 Load and parse a `dex.yaml` file. Resolves `${ENV_VAR}` references. Raises `ConfigError` if the file is missing or invalid.
@@ -22,18 +22,18 @@ Load and parse a `dex.yaml` file. Resolves `${ENV_VAR}` references. Raises `Conf
 ### `validate_config`
 
 ```python
-validate_config(config: DexConfig) -> None
+validate_config(config: DexConfig) -> list[str]
 ```
 
-Validate config against the schema. Raises `ConfigError` with details on invalid fields.
+Validate config against the schema. Returns a list of error/warning strings (empty if valid).
 
 ### `resolve_env_vars`
 
 ```python
-resolve_env_vars(config: dict) -> dict
+resolve_env_vars(text: str, env: dict[str, str] | None = None) -> str
 ```
 
-Resolve `${ENV_VAR}` and `${ENV_VAR:-default}` references in config values.
+Resolve `${ENV_VAR}` and `${ENV_VAR:-default}` references in raw config text.
 
 ## DexConfig Schema
 

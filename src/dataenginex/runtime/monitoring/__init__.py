@@ -23,8 +23,8 @@ class HealthMonitor:
     def worker_health(self) -> list[dict[str, Any]]:
         """Get health status of all active workers."""
         rows = self.store.query(
-            "SELECT worker_id, last_heartbeat_at, current_run_id "
-            "FROM workers WHERE status = 'active'"
+            "SELECT worker_id, last_heartbeat_at "
+            "FROM workers WHERE state = 'running'"
         )
         now = utcnow()
         result = []
@@ -40,7 +40,6 @@ class HealthMonitor:
                 "worker_id": row["worker_id"],
                 "healthy": is_healthy,
                 "last_heartbeat": row["last_heartbeat_at"],
-                "current_run": row["current_run_id"],
             })
         return result
 
@@ -61,21 +60,24 @@ class HealthMonitor:
         ]
 
     def resource_usage(self, project_id: str | None = None) -> dict[str, Any]:
-        """Get aggregate resource usage, optionally per-project."""
+        """Get aggregate resource usage, optionally per-project.
+
+        Resource data is stored in ``observed_resources_json`` as a JSON blob.
+        This method returns a summary based on attempt counts.
+        """
         if project_id:
             rows = self.store.query(
-                "SELECT SUM(cpu_seconds) as cpu, SUM(peak_memory_mb) as memory "
+                "SELECT COUNT(*) as attempt_count "
                 "FROM attempts WHERE project_id = ? AND state = 'succeeded'",
                 (project_id,),
             )
         else:
             rows = self.store.query(
-                "SELECT SUM(cpu_seconds) as cpu, SUM(peak_memory_mb) as memory "
+                "SELECT COUNT(*) as attempt_count "
                 "FROM attempts WHERE state = 'succeeded'",
                 (),
             )
         row: dict[str, Any] = dict(rows[0]) if rows else {}
         return {
-            "cpu_seconds": row.get("cpu") or 0,
-            "peak_memory_mb": row.get("memory") or 0,
+            "attempt_count": row.get("attempt_count") or 0,
         }

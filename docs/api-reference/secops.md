@@ -32,7 +32,7 @@ matches = detector.scan("Email me at alice@example.com")
 Mask or redact PII in text.
 
 ```python
-masker = MaskingEngine(strategy=MaskingStrategy.REDACT)
+masker = MaskingEngine(default_strategy=MaskingStrategy.REDACT)
 safe_text = masker.mask("Email me at alice@example.com")
 # -> "Email me at [REDACTED]"
 ```

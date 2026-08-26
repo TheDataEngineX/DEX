@@ -23,14 +23,17 @@ class WorkloadKind(StrEnum):
 ```python
 class RunState(StrEnum):
     REQUESTED = "requested"
+    AWAITING_POLICY = "awaiting_policy"
+    AWAITING_APPROVAL = "awaiting_approval"
+    PLANNING = "planning"
     QUEUED = "queued"
-    CLAIMED = "claimed"
+    LEASED = "leased"
     RUNNING = "running"
+    COMMITTING = "committing"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
     TIMED_OUT = "timed_out"
-    # ... plus intermediate states
 ```
 
 ## Data Classes

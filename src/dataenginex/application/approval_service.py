@@ -18,17 +18,18 @@ __all__ = ["ApprovalService", "ApprovalView"]
 class ApprovalView:
     """Read-only projection of an approval."""
 
-    def __init__(self, row: dict[str, Any]) -> None:
-        self.approval_id = row["approval_id"]
-        self.action = row["action"]
-        self.project_id = row["project_id"]
-        self.requested_by = row["requested_by"]
-        self.state = row["state"]
-        self.operation_digest = row.get("operation_digest", "")
-        self.requested_at = row.get("requested_at", "")
-        self.decided_at = row.get("decided_at")
-        self.decided_by = row.get("decided_by")
-        self.expiry = row.get("expiry")
+    def __init__(self, row: Any) -> None:
+        d = dict(row)
+        self.approval_id = d["approval_id"]
+        self.action = d.get("action_summary", "")
+        self.project_id = d["project_id"]
+        self.requested_by = d["requested_by"]
+        self.state = d["state"]
+        self.operation_digest = d.get("operation_digest", "")
+        self.requested_at = d.get("requested_at", "")
+        self.decided_at = d.get("decided_at")
+        self.decided_by = d.get("approver_id")
+        self.expiry = d.get("expires_at")
 
 
 class ApprovalAlreadyDecided(ApplicationError):
@@ -57,17 +58,19 @@ class ApprovalService(Service):
         expiry_hours: int = 24,
     ) -> ApprovalId:
         """Request human approval for an action."""
+        import datetime
+
         approval_id = ApprovalId(new_id("apr"))
         now = utcnow()
         self.store.query_one(
             "INSERT INTO approvals "
-            "(approval_id, project_id, action, requested_by, state, "
-            "operation_digest, summary, requested_at, expiry) "
-            "VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)",
+            "(approval_id, project_id, requested_by, action_summary, operation_digest, "
+            "risk_level, state, requested_at, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
             (
-                approval_id, project_id, action, requested_by,
-                operation_digest, summary, now.isoformat(),
-                (now + __import__("datetime").timedelta(hours=expiry_hours)).isoformat(),
+                approval_id, project_id, requested_by,
+                action, operation_digest, 0, now.isoformat(),
+                (now + datetime.timedelta(hours=expiry_hours)).isoformat(),
             ),
         )
         return approval_id
@@ -87,11 +90,12 @@ class ApprovalService(Service):
         )
         if row["state"] != "pending":
             raise ApprovalAlreadyDecided(f"approval {approval_id} is {row['state']}")
-        if row.get("expiry") and utcnow().isoformat() > row["expiry"]:
+        expiry = row["expires_at"] if row["expires_at"] else None
+        if expiry and utcnow().isoformat() > expiry:
             raise ApprovalExpired(f"approval {approval_id} has expired")
 
         self.store.query_one(
-            "UPDATE approvals SET state = 'approved', decided_by = ?, decided_at = ?, comment = ? "
+            "UPDATE approvals SET state = 'approved', approver_id = ?, decided_at = ?, reason = ? "
             "WHERE approval_id = ?",
             (decided_by, utcnow().isoformat(), comment, approval_id),
         )
@@ -113,7 +117,7 @@ class ApprovalService(Service):
             raise ApprovalAlreadyDecided(f"approval {approval_id} is {row['state']}")
 
         self.store.query_one(
-            "UPDATE approvals SET state = 'rejected', decided_by = ?, decided_at = ?, comment = ? "
+            "UPDATE approvals SET state = 'rejected', approver_id = ?, decided_at = ?, reason = ? "
             "WHERE approval_id = ?",
             (decided_by, utcnow().isoformat(), reason, approval_id),
         )
@@ -154,7 +158,7 @@ class ApprovalService(Service):
             (approval_id,),
             subject=f"approval {approval_id}",
         )
-        stored_digest = row.get("operation_digest", "")
+        stored_digest = row["operation_digest"] if row["operation_digest"] else ""
         if not stored_digest:
             return True  # No digest binding
         return bool(stored_digest == current_operation_digest)

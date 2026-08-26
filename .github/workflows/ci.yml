@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "latest"
           python-version: "3.13"
@@ -29,7 +29,7 @@ jobs:
           UV_PROJECT_ENVIRONMENT: .venv
       - uses: reviewdog/action-actionlint@v1
 
-      - run: uv run poe quality
+      - run: uv run poe check-all
 
       - run: uv build
 
@@ -39,14 +39,14 @@ jobs:
     needs: quality
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "latest"
           python-version: "3.13"
       - run: uv sync --group ml
         env:
           UV_PROJECT_ENVIRONMENT: .venv
-      - run: uv run poe test-cov-core
+      - run: uv run poe test-cov
       - uses: codecov/codecov-action@v7
         with:
           flags: dataenginex
@@ -60,7 +60,7 @@ jobs:
     if: github.event_name == 'schedule'
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v9.0.0
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "latest"
           python-version: "3.13"

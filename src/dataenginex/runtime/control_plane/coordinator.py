@@ -103,10 +103,12 @@ class ControlPlaneCoordinator:
         run = self._get_run(run_id)
         self.store.query_one(
             "INSERT INTO attempts "
-            "(attempt_id, run_id, project_id, revision_id, worker_id, state) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "(attempt_id, run_id, project_id, revision_id, "
+            "attempt_number, state, principal_id, worker_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 attempt_id, run_id, run["project_id"],
-                run["revision_id"], worker_id, AttemptState.PENDING.value,
+                run["revision_id"], 1, AttemptState.PENDING.value,
+                worker_id, worker_id,
             ),
         )
