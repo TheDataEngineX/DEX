@@ -19,7 +19,7 @@ import contextlib
 import os
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 import duckdb
 import structlog
@@ -27,8 +27,9 @@ import yaml
 
 from dataenginex.config import load_config, validate_config
 from dataenginex.config.schema import DexConfig
-from dataenginex.lakehouse.catalog import CatalogEntry as LakehouseCatalogEntry
-from dataenginex.lakehouse.catalog import DataCatalog
+from dataenginex.domains.data.catalog import CatalogEntry as LakehouseCatalogEntry
+from dataenginex.domains.data.catalog import DataCatalog
+from dataenginex.foundation.ids import ProjectId
 from dataenginex.plugins.registry import PluginRegistry, discover
 from dataenginex.store import DexStore
 
@@ -170,7 +171,7 @@ class DexEngine:
         # connector/transform registrations are available to the pipeline runner.
         self.plugins = PluginRegistry()
         self._load_plugins()
-        from dataenginex.core.project_plugins import load_project_plugins
+        from dataenginex.domains.plugins.loader import load_project_plugins
 
         load_project_plugins(self.project_dir)
 
@@ -189,7 +190,7 @@ class DexEngine:
             self._lexical_backend = next(iter(self._lexical_backends.values()))
 
         # Data pipeline runner — has access to feature store + vector store
-        from dataenginex.data.pipeline.runner import PipelineRunner
+        from dataenginex.domains.data.pipeline.runner import PipelineRunner
 
         self.pipeline_runner = PipelineRunner(
             self.config,
@@ -201,6 +202,7 @@ class DexEngine:
             embed_fn=self._embed_fn,
             lexical_backend=self._lexical_backend,
             lexical_backends=self._lexical_backends,
+            engine_ref=self,
         )
 
         # AI backends — ingest existing lakehouse into vector store, init agents
@@ -223,6 +225,17 @@ class DexEngine:
         self._init_privacy_guard()
         self._init_ai_layer()
 
+        # Spark subsystem — cluster, SQL, catalog, streaming, ML, lineage
+        self.spark_client: Any = None
+        self.spark_sql: Any = None
+        self.spark_catalog: Any = None
+        self.spark_streaming: Any = None
+        self.spark_ml: Any = None
+        self.spark_metrics: Any = None
+        self.spark_lineage: Any = None
+        self.spark_datasource_registry: Any = None
+        self._init_spark()
+
         logger.info(
             "DexEngine ready",
             project=self.config.project.name,
@@ -237,7 +250,7 @@ class DexEngine:
     def model_registry(self) -> Any:
         if self.serving_engine is not None and hasattr(self.serving_engine, "_registry"):
             return self.serving_engine._registry
-        from dataenginex.ml.registry import ModelRegistry
+        from dataenginex.domains.ml.registry import ModelRegistry
 
         return ModelRegistry(store=self.store)
 
@@ -262,7 +275,7 @@ class DexEngine:
     ) -> Any:
         import time
 
-        from dataenginex.data.pipeline.runner import PipelineResult
+        from dataenginex.domains.data.pipeline.runner import PipelineResult
 
         start = time.monotonic()
         result: PipelineResult = self.pipeline_runner.run(
@@ -351,12 +364,13 @@ class DexEngine:
     # -------------------------------------------------------------------------
 
     def add_pipeline(
-        self, name: str, source: str, schedule: str = "", destination: str = ""
+        self, name: str, source: str, schedule: str = "", destination: str = "",
+        engine: Literal["duckdb", "spark", "auto"] = "duckdb",
     ) -> None:
         from dataenginex.config.schema import PipelineConfig
 
         self.config.data.pipelines[name] = PipelineConfig(
-            source=source, schedule=schedule or None, destination=destination or None
+            source=source, schedule=schedule or None, destination=destination or None, engine=engine
         )
         self._save_config()
 
@@ -532,7 +546,7 @@ class DexEngine:
         if table_format == "parquet":
             safe_path = str(table_path).replace("'", "''")
             return f"read_parquet('{safe_path}')"
-        from dataenginex.lakehouse.storage import DeltaStorage
+        from dataenginex.providers.object_store.storage import DeltaStorage
 
         return DeltaStorage(base_path=str(table_path.parent)).parquet_scan_sql(table_path.name)
 
@@ -745,7 +759,7 @@ class DexEngine:
     # -------------------------------------------------------------------------
 
     def quality_check_table(self, table_name: str) -> dict[str, Any] | None:
-        from dataenginex.data.quality.gates import ColumnSpec, check_quality
+        from dataenginex.domains.analytics.quality.gates import ColumnSpec, check_quality
 
         layer, _, tbl = table_name.partition(".")
         if not layer or not tbl:
@@ -909,8 +923,8 @@ class DexEngine:
         try:
             from typing import cast as _cast
 
-            import dataenginex.ml.tracking.builtin  # noqa: F401
-            from dataenginex.ml.tracking import tracker_registry
+            import dataenginex.domains.ml.tracking.builtin  # noqa: F401
+            from dataenginex.domains.ml.tracking import tracker_registry
 
             cls: Any = _cast(Any, tracker_registry.get(self.config.ml.tracking.backend))
             logger.info("ml tracker initialised", backend=self.config.ml.tracking.backend)
@@ -925,8 +939,8 @@ class DexEngine:
 
     def _init_ml_feature_store(self) -> Any:
         try:
-            import dataenginex.ml.features.builtin  # noqa: F401
-            from dataenginex.ml.features import feature_store_registry
+            import dataenginex.domains.ml.features.builtin  # noqa: F401
+            from dataenginex.domains.ml.features import feature_store_registry
 
             cls = feature_store_registry.get(self.config.ml.features.backend)
             logger.info("ml feature store initialised", backend=self.config.ml.features.backend)
@@ -943,11 +957,11 @@ class DexEngine:
         try:
             from typing import cast
 
-            import dataenginex.ml.serving_engine.builtin  # noqa: F401
+            import dataenginex.domains.ml.serving_engine.builtin  # noqa: F401
 
             # Use store-backed model registry
-            from dataenginex.ml.registry import ModelRegistry
-            from dataenginex.ml.serving_engine import serving_registry
+            from dataenginex.domains.ml.registry import ModelRegistry
+            from dataenginex.domains.ml.serving_engine import serving_registry
 
             model_registry = ModelRegistry(store=self.store)
             cls: Any = cast(Any, serving_registry.get(self.config.ml.serving.engine))
@@ -970,11 +984,11 @@ class DexEngine:
         vector_store: Any = None
         embed_fn: Any = None
         try:
-            from dataenginex.ai.vectorstore import InMemoryBackend
+            from dataenginex.providers.vector.vectorstore import InMemoryBackend
 
             vector_store = InMemoryBackend(dimension=384)
             with contextlib.suppress(ImportError):
-                from dataenginex.ai.vectorstore import SentenceTransformerEmbedder
+                from dataenginex.providers.vector.vectorstore import SentenceTransformerEmbedder
 
                 embed_fn = SentenceTransformerEmbedder()
                 logger.info("sentence transformer embedder ready")
@@ -992,7 +1006,7 @@ class DexEngine:
             )
             return {}
         try:
-            from dataenginex.ai.lexical_search import ElasticsearchBackend
+            from dataenginex.domains.ai.lexical_search import ElasticsearchBackend
 
             indices = lexical.get("indices", {})
             hosts = lexical.get("hosts", ["http://localhost:9200"])
@@ -1039,8 +1053,8 @@ class DexEngine:
         if backend is None:
             return
         try:
-            from dataenginex.ai.tools import tool_registry
-            from dataenginex.ai.vectorstore import Document
+            from dataenginex.domains.ai.tools import tool_registry
+            from dataenginex.providers.vector.vectorstore import Document
 
             rows = tool_registry.call(
                 "query",
@@ -1075,7 +1089,7 @@ class DexEngine:
             return
         lakehouse = self._dex_dir / "lakehouse"
         try:
-            from dataenginex.ai.vectorstore import Document, RAGPipeline
+            from dataenginex.providers.vector.vectorstore import Document, RAGPipeline
 
             rag = RAGPipeline(
                 store=self._vector_store,
@@ -1159,7 +1173,7 @@ class DexEngine:
 
     def _init_ai(self) -> None:
         try:
-            from dataenginex.ai.llm import get_llm_provider
+            from dataenginex.domains.ai.llm import get_llm_provider
 
             self.llm = get_llm_provider(self.config.ai.llm.provider, model=self.config.ai.llm.model)
             prov = self.config.ai.llm.provider
@@ -1173,7 +1187,7 @@ class DexEngine:
 
         # Register tools regardless of LLM availability — predict/search_similar are LLM-free.
         try:
-            from dataenginex.ai.tools.builtin import register_builtin_tools
+            from dataenginex.domains.ai.tools.builtin import register_builtin_tools
 
             self._ingest_lakehouse_to_vector_store()
             register_builtin_tools(
@@ -1193,15 +1207,15 @@ class DexEngine:
         try:
             from typing import cast
 
-            import dataenginex.ai.agents.builtin  # noqa: F401
-            from dataenginex.ai.agents import agent_registry
-            from dataenginex.ai.tools import tool_registry
+            import dataenginex.domains.ai.agents.builtin  # noqa: F401
+            from dataenginex.domains.ai.agents import agent_registry
+            from dataenginex.domains.ai.tools import tool_registry
 
             for name, agent_cfg in self.config.ai.agents.items():
                 agent_llm = self.llm
                 if agent_cfg.model:
                     with contextlib.suppress(Exception):
-                        from dataenginex.ai.llm import get_llm_provider as _get
+                        from dataenginex.domains.ai.llm import get_llm_provider as _get
 
                         agent_llm = _get(self.config.ai.llm.provider, model=agent_cfg.model)
                 cls: Any = cast(Any, agent_registry.get(agent_cfg.runtime))
@@ -1219,9 +1233,9 @@ class DexEngine:
 
     def _init_ai_layer(self) -> None:
         try:
-            from dataenginex.ai.memory.base import ShortTermMemory
-            from dataenginex.ai.observability.metrics import AgentMetrics
-            from dataenginex.ai.runtime.sandbox import Sandbox
+            from dataenginex.domains.ai.memory.base import ShortTermMemory
+            from dataenginex.domains.ai.observability.metrics import AgentMetrics
+            from dataenginex.domains.ai.runtime.sandbox import Sandbox
 
             max_entries = int(os.getenv("DEX_AI_MEMORY_MAX_ENTRIES", "100"))
             self.ai_memory = ShortTermMemory(max_entries=max_entries)
@@ -1255,19 +1269,10 @@ class DexEngine:
 
         audit_logger: AuditLogger | None = None
         if self.config.secops.audit.enabled:
-            raw_path = self.config.secops.audit.db_path.strip()
-            if not raw_path:
-                db_path = ":memory:"
-            else:
-                from pathlib import Path as _Path
-
-                p = _Path(raw_path)
-                db_path = str(p if p.is_absolute() else self._dex_dir / p)
-            audit_logger = AuditLogger(db_path=db_path)
+            audit_logger = AuditLogger()
             self.secops_audit = audit_logger
             logger.info(
                 "secops_audit.initialized",
-                db_path=db_path,
             )
         else:
             logger.info("secops_audit disabled — audit logging not configured")
@@ -1280,11 +1285,85 @@ class DexEngine:
         strat = len(guard_cfg.strategies)
         logger.info("privacy guard initialised", enabled=en, strategies=strat)
 
+    def _init_spark(self) -> None:
+        """Initialise Spark subsystem — cluster, SQL, catalog, streaming, ML, lineage."""
+        try:
+            from dataenginex.spark.catalog.adapter import SparkCatalogAdapter
+            from dataenginex.spark.connect.client import SparkConnectClient
+            from dataenginex.spark.datasource.registry import DataSourceRegistry
+            from dataenginex.spark.lineage.openlineage_projection import OpenLineageProjection
+            from dataenginex.spark.metrics.resource_accounting import ResourceAccounting
+            from dataenginex.spark.ml.mllib_provider import MLlibProvider
+            from dataenginex.spark.sql.spark_sql_executor import SparkSQLExecutor
+            from dataenginex.spark.streaming.query_manager import StreamingQueryManager
+
+            project_id = ProjectId(self.config.project.name)
+
+            # Spark Connect client — local[*] for development
+            spark_url = getattr(self.config, "spark_master", None) or "local[*]"
+            self.spark_client = SparkConnectClient(
+                server_url=spark_url,
+                project_id=project_id,
+                session_config={
+                    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                    "spark.sql.catalog.spark_catalog": (
+                        "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+                    ),
+                },
+            )
+
+            # Spark SQL executor
+            self.spark_sql = SparkSQLExecutor(
+                project_id=project_id,
+                spark_client=self.spark_client,
+            )
+
+            # Spark Catalog adapter
+            catalog_type = getattr(self.config, "spark_catalog_type", "file")
+            self.spark_catalog = SparkCatalogAdapter(
+                catalog_type=catalog_type,
+                connection_config={"lakehouse_path": str(self._dex_dir / "lakehouse")},
+            )
+
+            # Streaming query manager
+            self.spark_streaming = StreamingQueryManager(project_id=project_id)
+
+            # MLlib provider with MLflow
+            mlflow_uri = getattr(self.config, "mlflow_tracking_uri", None)
+            self.spark_ml = MLlibProvider(
+                project_id=project_id,
+                mlflow_tracking_uri=mlflow_uri,
+            )
+
+            # Resource accounting
+            self.spark_metrics = ResourceAccounting(project_id=project_id)
+
+            # OpenLineage
+            openlineage_url = getattr(self.config, "openlineage_url", None)
+            if openlineage_url:
+                self.spark_lineage = OpenLineageProjection(
+                    project_id=project_id,
+                    openlineage_url=openlineage_url,
+                )
+
+            # Data source registry
+            self.spark_datasource_registry = DataSourceRegistry(project_id=project_id)
+
+            logger.info(
+                "spark subsystem initialised",
+                project=project_id,
+                master=spark_url,
+                catalog=catalog_type,
+            )
+        except Exception as exc:
+            logger.warning("spark subsystem init failed", error=str(exc))
+
     def _init_model_router(self) -> None:
         import os
 
-        from dataenginex.ai.routing.guarded import GuardedProvider
-        from dataenginex.ai.routing.router import BaseProvider, ModelRouter
+        from dataenginex.domains.ai.providers import BaseProvider
+        from dataenginex.providers.model.guarded import GuardedProvider
+        from dataenginex.providers.model.router import ModelRouter
 
         def _wrap(name: str, provider: BaseProvider) -> BaseProvider:
             """Wrap *provider* with the guard. Local targets bypass at call time."""
@@ -1292,17 +1371,17 @@ class DexEngine:
 
         providers: dict[str, BaseProvider] = {}
         if os.environ.get("ANTHROPIC_API_KEY"):
-            from dataenginex.ai.routing.anthropic import AnthropicProvider
+            from dataenginex.providers.model.anthropic import AnthropicProvider
 
             providers["anthropic"] = _wrap("anthropic", AnthropicProvider())
             logger.info("llm provider registered", provider="anthropic")
         if os.environ.get("OPENAI_API_KEY"):
-            from dataenginex.ai.routing.openai import OpenAIProvider
+            from dataenginex.providers.model.openai import OpenAIProvider
 
             providers["openai"] = _wrap("openai", OpenAIProvider())
             logger.info("llm provider registered", provider="openai")
 
-        from dataenginex.ai.routing.ollama import OllamaProvider
+        from dataenginex.providers.model.ollama import OllamaProvider
 
         providers.setdefault("ollama", _wrap("ollama", OllamaProvider()))
         logger.info("llm provider registered", provider="ollama")

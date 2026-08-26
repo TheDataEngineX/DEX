@@ -1,0 +1,231 @@
+# DataEngineX — Local Spark Infrastructure
+# Spark standalone cluster + MLflow + Hive Metastore + MinIO
+# Usage: docker compose up -d
+
+services:
+  # ── Spark Cluster ─────────────────────────────────────────────────────────
+  spark-master:
+    image: apache/spark:4.2.0
+    container_name: dex-spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8180
+      - SPARK_DAEMON_JAVA_OPTS=-Xms512m -Xmx1g
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "7077:7077"    # Spark master
+      - "8180:8180"    # Spark Master UI
+      - "18080:18080"  # Spark History Server
+    volumes:
+      - spark_data:/opt/spark/work-dir
+      - ./spark-jobs:/opt/spark/jobs
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8180"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dex-spark
+
+  spark-worker:
+    image: apache/spark:4.2.0
+    container_name: dex-spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_WEBUI_PORT=8181
+      - SPARK_DAEMON_JAVA_OPTS=-Xms256m -Xmx1g
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      spark-master:
+        condition: service_healthy
+    ports:
+      - "8181:8181"  # Spark Worker UI
+    volumes:
+      - spark_data:/opt/spark/work-dir
+      - ./spark-jobs:/opt/spark/jobs
+    networks:
+      - dex-spark
+
+  # ── MLflow Tracking Server ────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.19.0
+    container_name: dex-mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://mlflow:mlflow@mlflow-db:5432/mlflow
+      --default-artifact-root /mlflow/artifacts
+      --serve-artifacts
+    environment:
+      - MLFLOW_TRACKING_URI=postgresql://mlflow:mlflow@mlflow-db:5432/mlflow
+    ports:
+      - "5000:5000"  # MLflow UI + API
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    depends_on:
+      mlflow-db:
+        condition: service_healthy
+    networks:
+      - dex-spark
+
+  # ── MLflow Database ──────────────────────────────────────────────────────
+  mlflow-db:
+    image: postgres:16-alpine
+    container_name: dex-mlflow-db
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: mlflow
+      POSTGRES_DB: mlflow
+    ports:
+      - "5434:5432"
+    volumes:
+      - mlflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dex-spark
+
+  # ── Hive Metastore (Catalog) ─────────────────────────────────────────────
+  hive-metastore:
+    image: apache/hive:3.1.3-with-hadoop3.4.1
+    container_name: dex-hive-metastore
+    environment:
+      - HIVE_HOME=/opt/hive
+      - HADOOP_HOME=/opt/hadoop
+      - METASTORE_DB_HOST=metastore-db
+      - METASTORE_DB_PORT=5432
+      - METASTORE_DB_NAME=metastore
+      - METASTORE_DB_USER=hive
+      - METASTORE_DB_PASSWORD=hive
+    ports:
+      - "9083:9083"   # Hive Metastore Thrift
+      - "10000:10000" # HiveServer2
+      - "10002:10002" # Hive Web UI
+    depends_on:
+      metastore-db:
+        condition: service_healthy
+    networks:
+      - dex-spark
+
+  metastore-db:
+    image: postgres:16-alpine
+    container_name: dex-metastore-db
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+    ports:
+      - "5435:5432"
+    volumes:
+      - metastore_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dex-spark
+
+  # ── MinIO (S3-compatible storage for Delta Lake) ──────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: dex-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"  # MinIO API
+      - "9001:9001"  # MinIO Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dex-spark
+
+  # ── MinIO Client (bucket setup) ───────────────────────────────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: dex-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin &&
+        mc mb --ignore-existing local/dex-lake &&
+        mc mb --ignore-existing local/dex-artifacts &&
+        mc mb --ignore-existing local/dex-checkpoints &&
+        mc anonymous set download local/dex-lake &&
+        echo 'MinIO buckets created successfully'
+      "
+    networks:
+      - dex-spark
+
+  # ── Zookeeper (for Kafka) ────────────────────────────────────────────────
+  zookeeper:
+    image: bitnami/zookeeper:3.9
+    container_name: dex-zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dex-spark
+
+  # ── Kafka (for Structured Streaming) ─────────────────────────────────────
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: dex-kafka
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LOG_RETENTION_HOURS=168
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    ports:
+      - "9092:9092"  # Kafka broker
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - dex-spark
+
+volumes:
+  spark_data:
+  mlflow_artifacts:
+  mlflow_db_data:
+  metastore_db_data:
+  minio_data:
+  zookeeper_data:
+  kafka_data:
+
+networks:
+  dex-spark:
+    driver: bridge

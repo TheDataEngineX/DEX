@@ -1,4 +1,4 @@
-"""Tests for dataenginex.data.connectors.parquet — ParquetConnector."""
+"""Tests for dataenginex.providers.connectors.parquet — ParquetConnector."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dataenginex.data.connectors.parquet import ParquetConnector
+from dataenginex.providers.connectors.parquet import ParquetConnector
 
 
 @pytest.fixture()

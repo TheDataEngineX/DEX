@@ -1,4 +1,4 @@
-"""Tests for dataenginex.data.connectors.spark — SparkConnector."""
+"""Tests for dataenginex.providers.connectors.spark — SparkConnector."""
 
 from __future__ import annotations
 
@@ -53,30 +53,30 @@ def mock_pyspark(monkeypatch: pytest.MonkeyPatch) -> Generator[MagicMock]:
 
     with (
         patch.dict(sys.modules, {"pyspark": mock_pyspark_mod, "pyspark.sql": mock_sql_mod}),
-        patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True),
+        patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True),
     ):
         yield mock_session
 
 
 class TestSparkConnectorImportGuard:
     def test_raises_import_error_when_pyspark_missing(self) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", False):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", False):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             with pytest.raises(ImportError, match="PySpark is required"):
                 SparkConnector()
 
     def test_registered_as_spark(self) -> None:
-        from dataenginex.data.connectors import connector_registry
-        from dataenginex.data.connectors.spark import SparkConnector
+        from dataenginex.providers.connectors import connector_registry
+        from dataenginex.providers.connectors.spark import SparkConnector
 
         assert connector_registry.get("spark") is SparkConnector
 
 
 class TestSparkConnectorConnect:
     def test_connect_creates_session(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             c = SparkConnector()
             c.connect()
@@ -84,8 +84,8 @@ class TestSparkConnectorConnect:
             c.disconnect()
 
     def test_disconnect_clears_session(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             c = SparkConnector()
             c.connect()
@@ -93,32 +93,32 @@ class TestSparkConnectorConnect:
             assert c._spark is None
 
     def test_disconnect_before_connect_is_safe(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             SparkConnector().disconnect()  # should not raise
 
     def test_health_check_false_when_disconnected(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             assert SparkConnector().health_check() is False
 
 
 class TestSparkConnectorRead:
     def _connector(self, path: str | None = "/data/test") -> Any:
-        from dataenginex.data.connectors.spark import SparkConnector
+        from dataenginex.providers.connectors.spark import SparkConnector
 
         return SparkConnector(path=path)
 
     def test_read_not_connected_raises(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector()
             with pytest.raises(RuntimeError, match="Not connected"):
                 c.read()
 
     def test_read_no_path_raises(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector(path=None)
             c._spark = mock_pyspark
             with pytest.raises(ValueError, match="No path specified"):
@@ -133,7 +133,7 @@ class TestSparkConnectorRead:
         mock_pyspark.read.format.return_value.options.return_value.load.return_value = df
         mock_pyspark.read.format.return_value.load.return_value = df
 
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector()
             c._spark = mock_pyspark
             rows = c.read()
@@ -150,7 +150,7 @@ class TestSparkConnectorRead:
         mock_pyspark.read.format.return_value.options.return_value.load.return_value = df
         mock_pyspark.read.format.return_value.load.return_value = df
 
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector(path="/default/path")
             c._spark = mock_pyspark
             c.read(table="/override/path")
@@ -163,7 +163,7 @@ class TestSparkConnectorRead:
             "oops"
         )
 
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector()
             c._spark = mock_pyspark
             assert c.read(default=[]) == []
@@ -174,7 +174,7 @@ class TestSparkConnectorRead:
             "boom"
         )
 
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
             c = self._connector()
             c._spark = mock_pyspark
             with pytest.raises(RuntimeError, match="boom"):
@@ -183,16 +183,16 @@ class TestSparkConnectorRead:
 
 class TestSparkConnectorWrite:
     def test_write_not_connected_raises(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             c = SparkConnector()
             with pytest.raises(RuntimeError, match="Not connected"):
                 c.write([{"x": 1}])
 
     def test_write_unsupported_type_raises(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             c = SparkConnector()
             c._spark = mock_pyspark
@@ -200,8 +200,8 @@ class TestSparkConnectorWrite:
                 c.write("not a list")
 
     def test_write_empty_list_is_noop(self, mock_pyspark: MagicMock) -> None:
-        with patch("dataenginex.data.connectors.spark._PYSPARK_AVAILABLE", True):
-            from dataenginex.data.connectors.spark import SparkConnector
+        with patch("dataenginex.providers.connectors.spark._PYSPARK_AVAILABLE", True):
+            from dataenginex.providers.connectors.spark import SparkConnector
 
             c = SparkConnector()
             c._spark = mock_pyspark

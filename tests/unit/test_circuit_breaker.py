@@ -1,10 +1,10 @@
-"""Tests for dataenginex.core.circuit_breaker."""
+"""Tests for dataenginex.runtime.circuit_breaker."""
 
 from __future__ import annotations
 
 import time
 
-from dataenginex.core.circuit_breaker import CircuitBreaker, State
+from dataenginex.runtime.circuit_breaker import CircuitBreaker, State
 
 
 class TestCircuitBreaker:

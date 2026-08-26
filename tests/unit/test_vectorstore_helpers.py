@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataenginex.ai.vectorstore import (
+from dataenginex.providers.vector.vectorstore import (
     Document,
     InMemoryBackend,
     QdrantBackend,

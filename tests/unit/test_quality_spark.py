@@ -11,7 +11,7 @@ from typing import Any
 import duckdb
 import pytest
 
-from dataenginex.data.quality.gates import ColumnSpec
+from dataenginex.domains.analytics.quality.gates import ColumnSpec
 from tests.conftest import requires_pyspark
 
 
@@ -20,7 +20,7 @@ class TestCheckQualitySparkImportError:
     """Verify ImportError is raised when pyspark is not available (mocked)."""
 
     def test_raises_import_error_without_pyspark(self, monkeypatch: Any) -> None:
-        import dataenginex.data.quality.spark as spark_mod
+        import dataenginex.domains.analytics.quality.spark as spark_mod
 
         monkeypatch.setattr(spark_mod, "_PYSPARK_AVAILABLE", False)
         with pytest.raises(ImportError, match="PySpark is required"):
@@ -33,7 +33,7 @@ class TestCheckQualitySparkImportError:
 @requires_pyspark
 class TestCheckQualitySpark:
     def test_completeness_pass(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1, "a"), (2, "b")], schema=["id", "name"])
         conn = duckdb.connect(":memory:")
@@ -42,7 +42,7 @@ class TestCheckQualitySpark:
         assert result.passed is True
 
     def test_completeness_fail_with_nulls(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1, "a"), (None, None)], schema=["id", "name"])
         conn = duckdb.connect(":memory:")
@@ -51,7 +51,7 @@ class TestCheckQualitySpark:
         assert result.passed is False
 
     def test_uniqueness_pass(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1,), (2,)], schema=["id"])
         conn = duckdb.connect(":memory:")
@@ -60,7 +60,7 @@ class TestCheckQualitySpark:
         assert result.passed is True
 
     def test_uniqueness_fail_with_dupes(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1,), (1,)], schema=["id"])
         conn = duckdb.connect(":memory:")
@@ -69,7 +69,7 @@ class TestCheckQualitySpark:
         assert result.passed is False
 
     def test_schema_validation(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1, "alice")], schema=["id", "name"])
         conn = duckdb.connect(":memory:")
@@ -83,7 +83,7 @@ class TestCheckQualitySpark:
         assert any("missing" in v for v in result.schema_violations)
 
     def test_view_is_dropped_after_check(self, spark: Any) -> None:
-        from dataenginex.data.quality.spark import check_quality_spark
+        from dataenginex.domains.analytics.quality.spark import check_quality_spark
 
         df = spark.createDataFrame([(1,)], schema=["id"])
         conn = duckdb.connect(":memory:")

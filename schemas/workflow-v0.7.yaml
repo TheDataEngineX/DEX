@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thedataenginex.org/schemas/workflow-v0.7.json",
+  "title": "DEX Workflow Definition v0.7",
+  "description": "Cross-domain workflow orchestration",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "dex/v0.7"
+    },
+    "kind": {
+      "type": "string",
+      "const": "Workflow"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "spark_pipeline", "spark_query", "spark_stream",
+                  "local_query", "python_operation",
+                  "model_operation", "ai_operation",
+                  "external_action", "approval", "quality_gate"
+                ]
+              },
+              "ref": { "type": "string" },
+              "dependsOn": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "config": { "type": "object" },
+              "policy": {
+                "type": "object",
+                "properties": {
+                  "requireApproval": { "type": "boolean", "default": false },
+                  "egress": { "type": "string" }
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "triggers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["cron", "event", "manual"] },
+              "config": { "type": "object" }
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "maxCpu": { "type": "integer" },
+            "maxMemory": { "type": "string" }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

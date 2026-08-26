@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from dataenginex.ai.tools.builtin import register_builtin_tools
+from dataenginex.domains.ai.tools.builtin import register_builtin_tools
 
 
 class TestRegisterBuiltinTools:

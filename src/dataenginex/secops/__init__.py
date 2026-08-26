@@ -6,7 +6,6 @@ Public API::
         PIIDetector, PIIField, PIIType, TextMatch,
         MaskingEngine, MaskingStrategy,
         AuditLogger, AuditEvent, AuditOperation,
-        SecOpsGate,
         PrivacyGuard, PrivacyGuardConfig, GuardResult, PrivacyBlocked,
     )
 """
@@ -14,7 +13,6 @@ Public API::
 from __future__ import annotations
 
 from .audit import AuditEvent, AuditLogger, AuditOperation
-from .gate import SecOpsGate
 from .guard import GuardResult, PrivacyBlocked, PrivacyGuard, PrivacyGuardConfig
 from .masking import MaskingEngine, MaskingStrategy
 from .pii import PIIDetector, PIIField, PIIType, TextMatch
@@ -32,6 +30,5 @@ __all__ = [
     "PrivacyBlocked",
     "PrivacyGuard",
     "PrivacyGuardConfig",
-    "SecOpsGate",
     "TextMatch",
 ]

@@ -1,41 +1,57 @@
-# Observability: Metrics & Logging
+# Observability
 
-**Library-level observability for `dataenginex`.** For application-level monitoring (HTTP middleware, health endpoints, Grafana dashboards), see [dex-studio/docs/observability.md](https://github.com/TheDataEngineX/dex-studio/blob/main/docs/observability.md).
+DataEngineX provides structured logging, Prometheus metrics, and distributed tracing out of the box.
 
 ## Logging
 
-`dataenginex` uses `structlog` for structured logging throughout the library. All loggers are configured by the host application (e.g., dex-studio). The library does not configure handlers itself.
-
-### Logging in your application
+All modules use [structlog](https://www.structlog.org/) for structured, machine-readable logs:
 
 ```python
 import structlog
-from dataenginex.engine import DexEngine
 
-structlog.configure(
-    processors=[structlog.dev.ConsoleRenderer()],
-    wrapper_class=structlog.make_filtering_bound_logger(20),  # INFO
-)
-engine = DexEngine("dex.yaml")
+logger = structlog.get_logger()
+logger.info("pipeline started", pipeline="clean_users", rows=1000)
 ```
+
+Log output is JSON by default. Set `DEX_LOG_FORMAT=console` for human-readable output.
 
 ## Metrics
 
-Prometheus metrics are exposed via `dataenginex.middleware`:
+Prometheus metrics are exposed at the engine level:
 
 ```python
-from dataenginex.middleware import get_metrics
+from dataenginex.engine import DexEngine
+
+engine = DexEngine("dex.yaml")
+# Metrics available via engine.metrics or Prometheus endpoint
 ```
 
-### Available library-level metrics
+Key metrics:
+- `dex_pipeline_runs_total` — total pipeline runs
+- `dex_pipeline_duration_seconds` — pipeline execution time
+- `dex_rows_processed_total` — rows read/written
+- `dex_engine_errors_total` — error count by type
 
-| Metric | Type | Description | Labels |
-|--------|------|-------------|--------|
-| `pipeline_run_duration_seconds` | Histogram | Pipeline execution time | pipeline_name, status |
-| `model_prediction_latency_seconds` | Histogram | Model inference time | model_name |
-| `llm_request_duration_seconds` | Histogram | LLM call time | provider, model |
-| `data_connector_rows_read` | Counter | Rows read by source connectors | connector_type |
+## Tracing
 
-### Integration with dex-studio
+Distributed tracing is integrated via structlog context:
 
-dex-studio exposes these metrics via FastAPI middleware and `/metrics` endpoint. See [dex-studio observability docs](https://github.com/TheDataEngineX/dex-studio/blob/main/docs/observability.md) for Grafana dashboards and alerting.
+```python
+logger = structlog.get_logger()
+logger.bind(trace_id="abc123", span_id="def456")
+```
+
+Correlation IDs propagate across pipeline stages, engine calls, and CLI invocations.
+
+## Run history
+
+Every pipeline run is recorded in `.dex/store.duckdb`:
+
+```python
+from dataenginex.engine import DexEngine
+
+engine = DexEngine("dex.yaml")
+runs = engine.store.get_pipeline_runs(pipeline="clean_users")
+```
+
+Run records include: status, start/end time, rows input/output, error messages, and lineage.

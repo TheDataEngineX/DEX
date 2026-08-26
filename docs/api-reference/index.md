@@ -1,19 +1,47 @@
 # API Reference
 
-Complete Python API reference for `dataenginex`. All modules are pure Python — no HTTP server required.
+Public API reference for the `dataenginex` library.
+
+## Core
 
 | Module | Description |
 |--------|-------------|
-| [engine](engine.md) | `DexEngine` — main entry point, store, worker |
-| [config](config.md) | Schema, loader, settings, defaults |
-| [core](core.md) | Medallion architecture, quality gates, interfaces, registry, exceptions |
-| [data](data.md) | Connectors, pipeline runner, transforms, profiler, quality |
-| [ml](ml.md) | Training, registry, drift detection, serving, feature store, tracking |
-| [ai](ai.md) | LLM routing, agents, vector store, memory, retrieval, workflows |
-| [lakehouse](lakehouse.md) | Storage backends, catalog, partitioning |
-| [warehouse](warehouse.md) | SQL transforms, lineage tracking |
-| [secops](secops.md) | PII detection, masking, audit logging, access gates, privacy guard |
-| [orchestration](orchestration.md) | Cron scheduler, built-in jobs |
-| [middleware](middleware.md) | Structured logging, Prometheus metrics, domain metrics |
-| [plugins](plugins.md) | Plugin registry, extension points |
-| [api](api.md) | FastAPI helpers — errors, pagination, schemas (for custom HTTP layers) |
+| [DexEngine](engine.md) | Main entry point — config, pipelines, warehouse, ML, AI |
+| [DexStore](store.md) | SQLite-backed persistence — runs, lineage, models, audit |
+| [Config](config.md) | YAML config loading and validation |
+
+## Pipelines
+
+| Module | Description |
+|--------|-------------|
+| [PipelineRunner](pipeline-runner.md) | Execute data pipelines — extract, transform, load |
+
+## CLI
+
+| Module | Description |
+|--------|-------------|
+| [CLI Commands](cli.md) | `dex` command group — validate, run, worker, secops |
+
+## Security
+
+| Module | Description |
+|--------|-------------|
+| [SecOps](secops.md) | PII detection, masking, audit logging, PrivacyGuard |
+
+## ML
+
+| Module | Description |
+|--------|-------------|
+| [Training](training.md) | Model training — sklearn, PyTorch, sentence transformers |
+
+## Foundation
+
+| Module | Description |
+|--------|-------------|
+| [Workloads](workloads.md) | WorkloadKind, RunState, workload definitions |
+
+## Engines
+
+| Module | Description |
+|--------|-------------|
+| [Engine Registry](engine-registry.md) | Register and retrieve execution engines |

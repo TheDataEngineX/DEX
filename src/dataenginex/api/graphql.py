@@ -1,6 +1,6 @@
 """Generic, reusable mechanism for exposing lakehouse tables over GraphQL.
 
-Given a :class:`~dataenginex.engine.DexBackend` and a mapping of
+Given a table-reading backend and a mapping of
 ``{graphql_type_name: table_name}``, :func:`build_schema` builds read-only
 Strawberry GraphQL types plus a ``Query`` root exposing each table as a list
 field with optional filtering by an id/key column.
@@ -73,7 +73,7 @@ def _table_path(engine: Any, table: str, layer: str) -> Path:
 def _query_rows(path: Path, id_column: str, id_value: str | None) -> list[dict[str, Any]]:
     with duckdb.connect(":memory:") as conn:
         if path.is_dir() and (path / "_delta_log").exists():
-            from dataenginex.lakehouse.storage import DeltaStorage
+            from dataenginex.providers.object_store.storage import DeltaStorage
 
             scan = DeltaStorage(base_path=str(path.parent)).parquet_scan_sql(path.name)
             sql = f"SELECT * FROM {scan}"

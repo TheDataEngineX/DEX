@@ -12,7 +12,7 @@ the machine in the first place. Cloud providers (OpenAI, Anthropic, etc.)
 go through full scan/mask/log.
 
 The guard is composed with a provider via
-:class:`~dataenginex.ai.routing.guarded.GuardedProvider` rather than
+:class:`~dataenginex.providers.model.guarded.GuardedProvider` rather than
 modifying the provider classes directly.
 
 Example::
@@ -20,8 +20,8 @@ Example::
     from dataenginex.secops import (
         MaskingStrategy, PIIType, PrivacyGuard, PrivacyGuardConfig,
     )
-    from dataenginex.ai.routing.guarded import GuardedProvider
-    from dataenginex.ai.routing.openai import OpenAIProvider
+    from dataenginex.providers.model.guarded import GuardedProvider
+    from dataenginex.providers.model.openai import OpenAIProvider
 
     guard = PrivacyGuard(
         config=PrivacyGuardConfig(
@@ -163,8 +163,8 @@ class GuardResult:
 class PrivacyGuard:
     """Pre-send PII interception for outbound LLM calls.
 
-    Compose with a :class:`~dataenginex.ai.routing.router.BaseProvider` via
-    :class:`~dataenginex.ai.routing.guarded.GuardedProvider`, or call
+    Compose with a :class:`~dataenginex.providers.model.router.BaseProvider` via
+    :class:`~dataenginex.providers.model.guarded.GuardedProvider`, or call
     :meth:`process` directly for custom integrations.
 
     Parameters:

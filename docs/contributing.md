@@ -1,106 +1,67 @@
-# Contributing to DataEngineX
+# Contributing
 
-Thank you for contributing!
+How to contribute to DataEngineX.
 
-## Getting Started
+## Getting started
 
-1. Read [development.md](./development.md) for setup instructions
 1. Fork the repository
-1. Create a feature branch from `main`
-1. Make your changes
-1. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/my-change`
+3. Make your changes
+4. Run checks: `uv run poe check-all`
+5. Commit and push
+6. Open a PR
 
-## Commit Messages
+## Code standards
 
-Use semantic commit format:
+- **Python 3.13+** — use modern syntax (type unions, `match`, etc.)
+- **mypy strict** — all code must pass `uv run poe typecheck`
+- **Ruff** — zero warnings: `uv run poe lint`
+- **Tests** — new code needs tests; coverage must stay above 85%
+- **Docstrings** — public APIs need docstrings; internal code doesn't
 
-- `feat(#123): add DuckDB backend`
-- `fix(#124): handle missing config key in registry`
-- `docs: update API reference`
-- `test: add backend integration tests`
-- `chore: update dependencies`
+## Commit messages
 
-## Code Style
+Use conventional commits:
 
-- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/)
-- Use type hints
-- Max line length: 100 characters (Ruff)
-- Add docstrings to public functions
-
-## Before Submitting PR
-
-1. Run all checks locally:
-
-   ```bash
-   uv run poe lint        # Ruff lint check
-   uv run poe typecheck   # Type checking
-   uv run poe test        # Run tests
-   ```
-
-1. Tests must pass with 85%+ coverage for new code
-
-1. Update documentation if needed
-
-1. Use PR template in `.github/PULL_REQUEST_TEMPLATE.md`
-
-## Pull Request Process
-
-- Reference issue: `Closes #123`
-- Describe what changed and why
-- Confirm all checklist items
-- Wait for CI/CD to pass
-- Get at least 1 approval before merging
-
-## Testing Requirements
-
-- Add unit tests for new code
-- Test error scenarios
-- Target 85%+ coverage: `uv run poe test-cov` (currently 1476 tests, 85%)
-
-## Documentation
-
-- Update README for user-facing changes
-- Add docstrings for functions
-- Create ADR for architectural decisions
-- Link related documentation
-
-## Attribution and Naming
-
-- This project is open source under MIT; keep license and attribution notices in redistributions.
-- Forks are welcome, but should use a distinct public name when redistributed as a separate project.
-- Do not present a fork as the official DataEngineX project.
-- See the project's license and brand guidelines for brand-usage details.
-
-## Code Reviews
-
-- Be respectful and constructive
-- Address feedback promptly
-- Keep commits organized
-- Don't force push after review starts
-
-## Useful Commands
-
-```bash
-uv run poe lint        # Linting
-uv run poe typecheck   # Type checking
-uv run poe test        # Run tests
-uv run poe test-cov    # Coverage report
-uv run poe check-all   # Run all checks
+```
+feat: add Kafka batch connector
+fix: handle empty CSV files in profiler
+docs: update architecture overview
+refactor: simplify pipeline runner init
+test: add integration test for Spark streaming
 ```
 
-## Issue Labels
+## Pull requests
 
-- `bug` - Something isn't working
-- `enhancement` - New feature or improvement
-- `good first issue` - Good for newcomers
-- `P1-high` / `P2-medium` - Priority levels
-- `dex-module` - Core DataEngineX infrastructure
+- Keep PRs focused — one change per PR
+- Include a clear description of what changed and why
+- Link related issues
+- Ensure CI passes before requesting review
 
-## Questions?
+## Architecture decisions
 
-- Check [development.md](./development.md)
-- Review [Architecture docs](./architecture.md)
-- Create a GitHub issue
-- Join #dex-dev Slack channel
+Significant design changes require an ADR (Architecture Decision Record) in `docs/superpowers/plans/`:
 
-Thank you for contributing! 🚀
+```markdown
+# ADR-NNNN: Title
+
+## Status
+Proposed | Accepted | Deprecated | Superseded by ADR-XXXX
+
+## Context
+What is the issue?
+
+## Decision
+What did we decide?
+
+## Consequences
+What are the trade-offs?
+```
+
+## Reporting issues
+
+Open an issue on GitHub with:
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Python version, OS, DataEngineX version

@@ -1,11 +1,31 @@
 # Changelog
 
-See [docs/release-notes.md](docs/release-notes.md) for the complete release history.
+See [src/dataenginex/RELEASE_NOTES.md](src/dataenginex/RELEASE_NOTES.md) for the complete release history.
 
 All notable changes to `dataenginex` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.7.0] - 2026-08-12
+
+### Changed
+
+- Architecture restructure: `core/`, `data/`, `ml/`, `ai/`, `warehouse/`, `lakehouse/` replaced by `domains/`, `providers/`, `runtime/`, `foundation/`, `interfaces/`
+- Domains organized by concern: `domains/ai`, `domains/analytics`, `domains/data`, `domains/execution`, `domains/governance`, `domains/ml`, `domains/plugins`, `domains/security`
+- New `application/` layer for domain services (governance, projects, runs, resources)
+- New `bootstrap/` module for engine wiring and startup
+- New `orm/` module for SQLAlchemy models
+- New `spark/` module for PySpark connector
+- `duckdb/` extracted as standalone module
+- Version bumped to 0.7.0
+
+## [0.6.0] - 2026-08-01
+
+### Changed
+
+- Monorepo restructuring (ADR-0001): single uv workspace with members in `packages/` and `apps/`
+- Version bumped to 0.6.0
 
 ## [0.5.2] - 2026-07-28
 
@@ -20,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version bumped to 0.5.2
 - `sentence-transformers` 5.x mock fix in `test_ml_finetune.py` (submodule import path)
 - Documentation updated across all guides to reflect current architecture and test stats
+
+[0.5.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.1...v0.5.2
 
 ## [0.5.1] - 2026-07-27
 
@@ -145,3 +167,5 @@ ______________________________________________________________________
 [0.5.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.4.2...v0.5.0
 [0.5.1]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.0...v0.5.1
 [0.5.2]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.1...v0.5.2
+[0.6.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.5.2...v0.6.0
+[0.7.0]: https://github.com/TheDataEngineX/dataenginex/compare/v0.6.0...v0.7.0

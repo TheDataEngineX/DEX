@@ -1,11 +1,19 @@
 [project]
 name = "dataenginex"
-version = "0.5.2"
-description = "DataEngineX — open-source, self-hosted, local-first Data + ML + AI workbench library"
-authors = [{ name = "Jay", email = "jayapal.myaka99@gmail.com" }]
-readme = "src/dataenginex/README.md"
+version = "0.7.0"
+description = "DEX Platform — open-source, local-first Data + ML + AI platform with Spark 4.2 foundation"
+authors = [{ name = "TheDataEngineX" }]
+readme = "README.md"
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
+keywords = ["data-engineering", "ml", "ai", "spark", "dex", "open-source", "local-first"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = [
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.2",
@@ -35,10 +43,13 @@ cloud = [
     "google-cloud-bigquery>=3.42.2",
 ]
 delta = ["deltalake>=1.6.2"]
-postgres = ["asyncpg>=0.31.0"]
 qdrant = ["qdrant-client>=1.18.0"]
-queue = ["arq>=0.28.0"]
 pytorch = ["torch>=2.13.0"]
+
+[project.urls]
+Homepage = "https://github.com/TheDataEngineX/dataenginex"
+Repository = "https://github.com/TheDataEngineX/dataenginex"
+Issues = "https://github.com/TheDataEngineX/dataenginex/issues"
 
 [dependency-groups]
 dev = [
@@ -51,15 +62,15 @@ dev = [
     "types-requests>=2.33.0.20260712",
     "poethepoet>=0.48.0",
     "uv>=0.11.30",
-    "mkdocs-material>=9.7.7",
-    "mkdocstrings[python]>=1.0.6",
     "pre-commit>=4.6.0",
     "pip-audit>=2.10.0",
 ]
-data = ["pyspark>=4.2.0"]
-notebook = ["pandas>=3.0.3"]
+spark = ["pyspark>=4.2.0", "delta-spark>=4.0.0", "pyiceberg>=0.11.0"]
+notebook = ["pandas>=2.0.0"]
 ml = ["scikit-learn>=1.9.0", "sentence-transformers>=5.6.0"]
-tracking = ["mlflow>=3.14.0"]
+tracking = ["mlflow>=3.14.0", "pandas>=2.0.0,<3"]
+catalog = ["pyhive[hive]>=0.7.0", "thrift-sasl>=0.4.0"]
+lineage = ["openlineage-python>=1.30.0"]
 
 [build-system]
 requires = ["hatchling>=1.29.0"]
@@ -68,10 +79,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/dataenginex"]
 
-[tool.uv]
-python-preference = "only-managed"
-default-groups = ["dev"]
-override-dependencies = ["pandas>=3.0"]
+# --- shared tool configuration ---
 
 [tool.ruff]
 line-length = 100
@@ -83,17 +91,23 @@ select = ["E", "F", "I", "B", "UP", "SIM", "C90"]
 [tool.ruff.lint.mccabe]
 max-complexity = 8
 
+[tool.ruff.lint.isort]
+known-first-party = ["dataenginex"]
+
 [tool.mypy]
 python_version = "3.13"
 strict = true
+warn_return_any = true
 warn_unused_configs = true
+ignore_missing_imports = true
+disable_error_code = ["misc"]
+warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
 module = [
+    "croniter.*",
     "structlog.*",
     "prometheus_client.*",
-    "arq.*",
-    "asyncpg.*",
     "qdrant_client.*",
     "boto3.*",
     "google.auth.*",
@@ -106,20 +120,13 @@ module = [
     "pyspark.*",
     "torch.*",
     "deltalake.*",
+    "keyring.*",
+    "strawberry.*",
+    "pika.*",
+    "confluent_kafka.*",
+    "elasticsearch.*",
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-    "dataenginex.data.quality.spark",
-    "dataenginex.data.connectors.spark",
-    "dataenginex.data.connectors.dbt",
-    "dataenginex.data.connectors.delta",
-    "dataenginex.ai.vectorstore",
-    "dataenginex.lakehouse.storage",
-    "dataenginex.ml.training",
-]
-warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -132,7 +139,7 @@ filterwarnings = [
     "ignore:unclosed.*socket:ResourceWarning",
     "ignore:unclosed event loop:ResourceWarning",
     "ignore::pytest.PytestUnhandledThreadExceptionWarning",
-    "ignore::dataenginex.ai.runtime.sandbox.ExperimentalFeatureWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]
@@ -140,16 +147,23 @@ branch = true
 source = ["dataenginex"]
 parallel = true
 omit = [
-    "*/src/dataenginex/data/connectors/delta.py",
-    "*/src/dataenginex/lakehouse/storage.py",
-    "*/src/dataenginex/worker.py",
-    "*/src/dataenginex/data/quality/spark.py",
-    "*/src/dataenginex/data/connectors/http.py",
-    "*/src/dataenginex/data/connectors/rest.py",
-    "*/src/dataenginex/data/connectors/sse.py",
-    "*/src/dataenginex/ml/mlflow_registry.py",
+    "*/spark/ml/mllib_provider.py",
+    "*/spark/transforms/applier.py",
+    "*/spark/sql/spark_sql_executor.py",
+    "*/spark/connect/client.py",
+    "*/spark/streaming/query_manager.py",
+    "*/spark/datasource/registry.py",
+    "*/spark/catalog/adapter.py",
+    "*/spark/catalog/iceberg.py",
+    "*/domains/data/pipeline/runner.py",
+    "*/domains/ml/training.py",
+    "*/domains/ai/tools/builtin.py",
+    "*/api/graphql.py",
+    "*/cli/train.py",
+    "*/cli/studio.py",
 ]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+fail_under = 85

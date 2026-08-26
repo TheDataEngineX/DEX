@@ -67,7 +67,7 @@ def test_indexes_rows_from_gold_table(engine: DexEngine, monkeypatch: pytest.Mon
     backend = MagicMock()
     engine._lexical_backends["movies"] = backend
     monkeypatch.setattr(
-        "dataenginex.ai.tools.tool_registry.call",
+        "dataenginex.domains.ai.tools.tool_registry.call",
         lambda *a, **k: [
             {
                 "movie_id": 1,
@@ -93,7 +93,7 @@ def test_indexes_rows_from_gold_table(engine: DexEngine, monkeypatch: pytest.Mon
 def test_noop_when_no_backend(engine: DexEngine, monkeypatch: pytest.MonkeyPatch) -> None:
     engine._lexical_backends.pop("movies", None)
     called = MagicMock()
-    monkeypatch.setattr("dataenginex.ai.tools.tool_registry.call", called)
+    monkeypatch.setattr("dataenginex.domains.ai.tools.tool_registry.call", called)
 
     engine.trigger_ai_index_refresh()  # must not raise
 
@@ -107,7 +107,7 @@ def test_noop_when_query_fails(engine: DexEngine, monkeypatch: pytest.MonkeyPatc
     def _raise(*_a: object, **_k: object) -> None:
         raise RuntimeError("table not found")
 
-    monkeypatch.setattr("dataenginex.ai.tools.tool_registry.call", _raise)
+    monkeypatch.setattr("dataenginex.domains.ai.tools.tool_registry.call", _raise)
 
     engine.trigger_ai_index_refresh()  # must not raise
 

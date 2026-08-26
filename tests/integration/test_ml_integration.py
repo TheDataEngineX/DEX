@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from dataenginex.ml.features.builtin import BuiltinFeatureStore
-from dataenginex.ml.tracking.builtin import BuiltinTracker
+from dataenginex.domains.ml.features.builtin import BuiltinFeatureStore
+from dataenginex.domains.ml.tracking.builtin import BuiltinTracker
 
 # ---------------------------------------------------------------------------
 # BuiltinTracker — full experiment lifecycle

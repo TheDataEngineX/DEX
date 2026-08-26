@@ -1,11 +1,11 @@
-"""Tests for dataenginex.ai.lexical_search — ElasticsearchBackend."""
+"""Tests for dataenginex.domains.ai.lexical_search — ElasticsearchBackend."""
 
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from dataenginex.ai.lexical_search import ElasticsearchBackend
-from dataenginex.ai.vectorstore import Document
+from dataenginex.domains.ai.lexical_search import ElasticsearchBackend
+from dataenginex.providers.vector.vectorstore import Document
 
 
 def _backend() -> ElasticsearchBackend:

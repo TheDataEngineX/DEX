@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://thedataenginex.org/schemas/resource-v0.7.json",
+  "title": "DEX Resource Definition v0.7",
+  "description": "Resource definitions imported by a DEX project",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "dex/v0.7"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Dataset", "Table", "DocumentCollection", "EventStream",
+        "Model", "Prompt", "Assistant", "VectorIndex",
+        "Pipeline", "Metric", "Dashboard", "Report",
+        "Connection", "SecretReference", "ExternalEndpoint"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["public", "internal", "confidential", "restricted"],
+          "default": "internal"
+        },
+        "owner": { "type": "string" },
+        "steward": { "type": "string" },
+        "provider": { "type": "string" },
+        "connectionRef": { "type": "string" },
+        "schema": { "type": ["object", "string"] },
+        "quality": {
+          "type": "object",
+          "properties": {
+            "gates": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "lineage": {
+          "type": "object",
+          "properties": {
+            "upstream": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "retention": {
+          "type": "object",
+          "properties": {
+            "policy": { "type": "string" },
+            "duration": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

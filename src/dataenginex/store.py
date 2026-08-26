@@ -293,6 +293,21 @@ class DexStore:
                 stmt = stmt.strip()
                 if stmt:
                     conn.execute(stmt)
+            self._apply_additive_migrations(conn)
+
+    @staticmethod
+    def _apply_additive_migrations(conn: sqlite3.Connection) -> None:
+        """Add columns introduced after a database was first created.
+
+        ``CREATE TABLE IF NOT EXISTS`` is a no-op on an existing table, so a
+        column added to _SCHEMA later never reaches databases created before
+        it and every write fails with "no such column". Reconcile the declared
+        columns against the live table and add whatever is missing.
+        """
+        for table, column, ddl in (("pipeline_runs", "skipped", "INTEGER NOT NULL DEFAULT 0"),):
+            cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+            if cols and column not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
     def _execute(self, sql: str, params: list[Any] | None = None) -> sqlite3.Cursor:
         return self._get_conn().execute(sql, params or [])
@@ -831,6 +846,10 @@ class DexStore:
     def all_catalog(self) -> list[CatalogEntry]:
         rows = self._execute("SELECT * FROM catalog_entries ORDER BY updated_at DESC").fetchall()
         return [self._row_to_catalog(r) for r in rows]
+
+    def delete_catalog(self, name: str) -> None:
+        """Remove a catalog entry. Silent when it is already absent."""
+        self._write("DELETE FROM catalog_entries WHERE name=?", [name])
 
     @staticmethod
     def _row_to_catalog(row: tuple[Any, ...]) -> CatalogEntry:

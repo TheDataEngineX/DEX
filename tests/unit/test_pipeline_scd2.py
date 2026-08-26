@@ -11,7 +11,7 @@ import pytest
 pytest.importorskip("deltalake")
 
 from dataenginex.config import load_config  # noqa: E402
-from dataenginex.data.pipeline.runner import PipelineRunner
+from dataenginex.domains.data.pipeline.runner import PipelineRunner
 
 
 def _write_csv(tmp_path: Path, rows: str) -> None:

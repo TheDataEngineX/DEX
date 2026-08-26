@@ -1,4 +1,4 @@
-"""Tests for LiteLLMProvider and VLLMProvider in dataenginex.ai.llm."""
+"""Tests for LiteLLMProvider and VLLMProvider in dataenginex.domains.ai.llm."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dataenginex.ai.llm import (
+from dataenginex.domains.ai.llm import (
     ChatMessage,
     LiteLLMProvider,
     LLMResponse,
@@ -95,7 +95,7 @@ class TestVLLMProvider:
         assert provider.config.model == "meta-llama/Llama-3.1-8B-Instruct"
 
     def test_openai_compatible_inheritance(self) -> None:
-        from dataenginex.ai.llm import OpenAICompatibleProvider
+        from dataenginex.domains.ai.llm import OpenAICompatibleProvider
 
         provider = VLLMProvider(base_url="http://vllm:8000")
         assert isinstance(provider, OpenAICompatibleProvider)

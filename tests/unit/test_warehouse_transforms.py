@@ -1,10 +1,13 @@
-"""Tests for dataenginex.warehouse.transforms — Transform classes and TransformPipeline."""
+"""Tests for the warehouse transforms.
+
+Covers the Transform classes and TransformPipeline.
+"""
 
 from __future__ import annotations
 
 import pytest
 
-from dataenginex.warehouse.transforms import (
+from dataenginex.domains.analytics.warehouse_transforms import (
     AddTimestampTransform,
     CastTypesTransform,
     DropNullsTransform,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.data.connectors.csv import CsvConnector
+from dataenginex.providers.connectors.csv import CsvConnector
 from tests.conformance.test_connector import ConnectorConformanceTests
 
 

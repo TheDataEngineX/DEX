@@ -3,7 +3,7 @@
 Usage::
 
     dex --help
-    dex validate dex.yaml
+    dex validate .
     dex version
 """
 
@@ -14,8 +14,8 @@ from pathlib import Path
 import click
 import structlog
 
-from dataenginex.config.loader import load_config, validate_config
-from dataenginex.core.exceptions import ConfigError
+from dataenginex.foundation import ValidationSeverity
+from dataenginex.runtime.compiler import ProjectCompiler
 
 logger = structlog.get_logger()
 
@@ -36,47 +36,56 @@ def dex() -> None:
 
 
 @dex.command()
-@click.argument("config_path", type=click.Path(exists=True, path_type=Path))
-@click.option(
-    "--overlay",
+@click.argument(
+    "project_path",
     type=click.Path(exists=True, path_type=Path),
-    default=None,
-    help="Overlay config file (e.g. dex.prod.yaml).",
+    default=".",
 )
-def validate(config_path: Path, overlay: Path | None) -> None:
-    """Validate a dex.yaml config file."""
-    try:
-        cfg = load_config(config_path, overlay=overlay)
-    except ConfigError as exc:
-        click.echo(f"Error: {exc}", err=True)
-        raise SystemExit(1) from exc
+def validate(project_path: Path) -> None:
+    """Compile a project and report what the compiler found (§6.8, §12.5).
 
-    issues = validate_config(cfg)
-    warnings = [i for i in issues if i.startswith("Warning:")]
-    hard_errors = [i for i in issues if not i.startswith("Warning:")]
+    Runs the same eleven stages a publish runs, so "valid" here means the same
+    thing it will mean at publish time. A validate that used a lighter check
+    would be worse than none: it would certify projects the publisher then
+    rejects.
+    """
+    # A directory is the project. Accepting the manifest path too is for the
+    # muscle memory of anyone typing `dex validate dex.yaml`.
+    root = project_path.parent if project_path.is_file() else project_path
 
-    if warnings:
-        click.echo(f"  {len(warnings)} warning(s):")
-        for w in warnings:
-            click.echo(f"  ! {w}")
+    result = ProjectCompiler(root).compile()
 
-    if hard_errors:
-        click.echo(f"  {len(hard_errors)} error(s):", err=True)
-        for err in hard_errors:
-            click.echo(f"  x {err}", err=True)
+    errors = [i for i in result.report.issues if i.severity is ValidationSeverity.ERROR]
+    warnings = [i for i in result.report.issues if i.severity is ValidationSeverity.WARNING]
+
+    for issue in warnings:
+        where = f" [{issue.location}]" if issue.location else ""
+        click.echo(f"  ! {issue.code}: {issue.message}{where}")
+
+    if errors:
+        for issue in errors:
+            where = f" [{issue.location}]" if issue.location else ""
+            click.echo(f"  x {issue.code}: {issue.message}{where}", err=True)
+        click.echo(f"\n{len(errors)} error(s). Project is not publishable.", err=True)
         raise SystemExit(1)
 
     _print_table(
-        f"Config: {cfg.project.name} v{cfg.project.version}",
+        f"Project: {result.manifest.metadata.name}",
         [
-            ("Data Sources", str(len(cfg.data.sources))),
-            ("Data Pipelines", str(len(cfg.data.pipelines))),
-            ("ML Experiments", str(len(cfg.ml.experiments))),
-            ("AI Agents", str(len(cfg.ai.agents))),
-            ("AI Collections", str(len(cfg.ai.collections))),
+            ("Profile", result.manifest.spec.profile),
+            ("Workloads", str(len(result.workloads))),
+            ("Resources", str(len(result.resources))),
+            ("Execution order", " -> ".join(result.execution_order) or "(none)"),
+            ("Capabilities", ", ".join(result.required_capabilities) or "(none)"),
+            ("Destinations", ", ".join(result.declared_destinations) or "(none, default deny)"),
+            ("Content hash", result.content_hash),
+            # Absent means nothing pins the dependencies, which makes the
+            # revision reproducible only by luck. Worth saying out loud.
+            ("Dependency lock", result.dependency_lock_hash or "(none)"),
+            ("Warnings", str(len(warnings))),
         ],
     )
-    click.echo("Config is valid.")
+    click.echo("Project is valid.")
 
 
 @dex.command()
@@ -93,11 +102,17 @@ def version() -> None:
 
 
 from dataenginex.cli.run import run  # noqa: E402
+from dataenginex.cli.runtime import runtime  # noqa: E402
 from dataenginex.cli.secops import secops  # noqa: E402
+from dataenginex.cli.studio import studio  # noqa: E402
 from dataenginex.cli.train import train  # noqa: E402
+from dataenginex.cli.worker import worker  # noqa: E402
 
 dex.add_command(run)
+dex.add_command(runtime)
+dex.add_command(worker)
 dex.add_command(secops)
+dex.add_command(studio)
 dex.add_command(train)
 
 if __name__ == "__main__":

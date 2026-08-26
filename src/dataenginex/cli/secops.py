@@ -2,7 +2,7 @@
 
 Subcommands::
 
-    dex secops status            # show guard config from the loaded dex.yaml
+    dex secops status            # show the policies this installation enforces
     dex secops scan "some text"  # run PII detection and show matches
 """
 
@@ -12,7 +12,10 @@ from pathlib import Path
 
 import click
 
-_DEFAULT_CONFIG = "dex.yaml"
+_STATE_DIR_HELP = "Where the control store lives (default: $DEX_STATE_DIR or .dex)."
+
+# Who the CLI acts as when reading the control plane (§9.2).
+_LOCAL_PRINCIPAL = "prin_cli_local"
 
 
 @click.group()
@@ -21,63 +24,61 @@ def secops() -> None:
 
 
 @secops.command()
-@click.option("--config", "config_path", default=_DEFAULT_CONFIG, help="dex.yaml path")
-def status(config_path: str) -> None:
-    """Show the PrivacyGuard configuration from dex.yaml."""
-    from dataenginex.config import load_config
+@click.option("--state-dir", help=_STATE_DIR_HELP)
+def status(state_dir: str | None) -> None:
+    """Show the policies this installation actually enforces (§9.3).
 
-    cfg = load_config(Path(config_path))
-    g = cfg.secops.guard
-    a = cfg.secops.audit
+    Read from the policy engine rather than from a ``secops:`` block in
+    dex.yaml. The config block was reported here but evaluated nowhere, so the
+    command described a security posture that no request was ever subject to.
+    """
+    from dataenginex.bootstrap import build_lite_gateway, open_control_store
+    from dataenginex.bootstrap.settings import Settings
+    from dataenginex.foundation import PrincipalId
+    from dataenginex.interfaces import Query
 
-    _section("Guard")
-    _row("Enabled", _yn(g.enabled))
-    _row("Block on detect", _yn(g.block_on_detect))
-    _row("Allow local bypass", _yn(g.allow_local))
-    _row("Log all outbound", _yn(g.log_all_outbound))
-    _row(
-        "Local targets",
-        ", ".join(sorted(g.local_targets)) if g.local_targets else "(none)",
-    )
+    settings = Settings.from_env(state_dir=Path(state_dir) if state_dir else None)
+    store = open_control_store(settings)
+    try:
+        gateway = build_lite_gateway(store)
+        policies = gateway.list_policies(Query(principal_id=PrincipalId(_LOCAL_PRINCIPAL))).items
 
-    if g.strategies:
+        _section(f"Policies ({len(policies)})")
+        for policy in sorted(policies, key=lambda p: -p.priority):
+            actions = ", ".join(policy.actions) if policy.actions else "*"
+            _row(
+                f"{policy.effect.value:<8} {policy.name}",
+                f"{actions}  (priority {policy.priority}, max risk {policy.max_risk_level})",
+            )
+        if not policies:
+            # Not a benign empty list: with no rule matching, the engine's
+            # default deny refuses everything.
+            _row("(none)", "default deny — nothing is permitted")
         click.echo()
-        _section("PII Strategies")
-        for pii_type, strategy in sorted(g.strategies.items()):
-            _row(pii_type, strategy)
-    else:
-        _row("PII strategies", "default (REDACT all)")
-
-    click.echo()
-    _section("Audit Logger")
-    _row("Enabled", _yn(a.enabled))
-    if a.enabled:
-        _row("DB path", a.db_path if a.db_path else ":memory: (no persistence)")
-
-    click.echo()
+    finally:
+        store.close()
 
 
 @secops.command()
 @click.argument("text")
-@click.option("--config", "config_path", default=_DEFAULT_CONFIG, help="dex.yaml path")
 @click.option(
     "--target",
     default="openai",
     show_default=True,
     help="Provider target name (affects local-bypass logic).",
 )
-def scan(text: str, config_path: str, target: str) -> None:
-    """Scan TEXT for PII using the guard configured in dex.yaml.
+def scan(text: str, target: str) -> None:
+    """Scan TEXT for PII using the default guard configuration.
 
     Prints each match (type, confidence, matched value) and shows the masked
     output the guard would send to the provider.
+
+    No ``--config``: detection is a property of the guard, not of a project, and
+    the option invited the reading that a project could weaken it.
     """
-    from dataenginex.config import load_config
     from dataenginex.secops import PrivacyGuard, PrivacyGuardConfig
 
-    cfg = load_config(Path(config_path))
-    guard_cfg = PrivacyGuardConfig.from_dict(cfg.secops.guard.model_dump())
-    guard = PrivacyGuard(config=guard_cfg)
+    guard = PrivacyGuard(config=PrivacyGuardConfig())
 
     result = guard.process(text, target=target)
 

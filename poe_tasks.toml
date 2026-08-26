@@ -1,53 +1,12 @@
-[tool.poe]
-executor.type = "uv"
+[tool.poe.tasks]
+version = "python -c \"from importlib.metadata import version; print(version('dataenginex'))\""
 
-[tool.poe.tasks.setup]
-shell = "uv sync --all-extras --all-groups && uvx pre-commit install"
-
-[tool.poe.tasks.lint]
-cmd = "ruff check src/ tests/"
-
-[tool.poe.tasks.typecheck]
-cmd = "mypy src/dataenginex/ --config-file=pyproject.toml --no-incremental"
-env  = {UV_PYTHON = "3.13", UV_PROJECT_ENVIRONMENT = ".venv"}
-
-[tool.poe.tasks.security]
-cmd = "uv run pip-audit --progress-spinner off --ignore-vuln CVE-2025-3000"
-
-[tool.poe.tasks.actionlint]
-shell = """
-if command -v actionlint >/dev/null 2>&1; then
-  actionlint .github/workflows/*.yml
-else
-  echo 'actionlint not found — install: brew install actionlint'
-  exit 1
-fi
-"""
-
-[tool.poe.tasks.quality]
-sequence = ["lint", "typecheck", "security"]
-
-[tool.poe.tasks.test-cov-core]
-env  = {COVERAGE_PROCESS_START = "pyproject.toml"}
-shell = "coverage run -m pytest tests/ -v && coverage combine && coverage html && coverage xml -o coverage.xml && coverage report --fail-under=85"
-
-[tool.poe.tasks.check-all]
-sequence = ["quality", "test-cov-core"]
-
-[tool.poe.tasks.format]
-cmd = "ruff format src/ tests/"
-
-[tool.poe.tasks.autofix]
-shell = "ruff check --fix src/ tests/ && ruff format src/ tests/"
-
-[tool.poe.tasks.mdformat]
-shell = "mdformat --check docs/ README.md src/dataenginex/README.md CLAUDE.md"
-
-[tool.poe.tasks.mdformat-fix]
-shell = "mdformat docs/ README.md src/dataenginex/README.md CLAUDE.md"
-
-[tool.poe.tasks.lint-fix]
-sequence = ["autofix"]
-
-[tool.poe.tasks.clean]
-shell = "rm -rf .pytest_cache .mypy_cache .ruff_cache dist build htmlcov .coverage* && find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; echo 'cleaned'"
+lint = "ruff check src/ tests/"
+lint-fix = "ruff check --fix src/ tests/"
+format = "ruff format src/ tests/"
+typecheck = "mypy --strict src/dataenginex/"
+test = "pytest tests/ -x -q"
+test-cov = "pytest tests/ -x -q --cov=dataenginex --cov-report=term-missing"
+check-all = { shell = "ruff check src/ tests/ && mypy --strict src/dataenginex/ && pytest tests/ -x -q" }
+security = "pip-audit"
+clean = "rm -rf .mypy_cache .ruff_cache .pytest_cache htmlcov coverage.xml .coverage"

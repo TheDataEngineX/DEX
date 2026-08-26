@@ -7,7 +7,7 @@ from typing import Any
 import duckdb
 import pytest
 
-from dataenginex.ai.tools.builtin import (
+from dataenginex.domains.ai.tools.builtin import (
     _make_lakehouse_query,
     _materialize_tables,
     _query_sql,

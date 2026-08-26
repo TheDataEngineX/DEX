@@ -7,8 +7,8 @@ from typing import Any
 
 import pytest
 
-from dataenginex.data.profiler import DataProfiler
-from dataenginex.data.registry import SchemaRegistry, SchemaVersion
+from dataenginex.domains.data.profiler import DataProfiler
+from dataenginex.domains.data.registry import SchemaRegistry, SchemaVersion
 
 # ============================================================================
 # Profiler

@@ -1,10 +1,13 @@
-"""Extended tests for dataenginex.ai.vectorstore — InMemoryBackend, RAGPipeline, Document."""
+"""Extended tests for the vector store provider.
+
+Covers InMemoryBackend, RAGPipeline, and Document.
+"""
 
 from __future__ import annotations
 
 import pytest
 
-from dataenginex.ai.vectorstore import (
+from dataenginex.providers.vector.vectorstore import (
     Document,
     InMemoryBackend,
     RAGPipeline,

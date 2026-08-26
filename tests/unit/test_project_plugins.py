@@ -1,10 +1,10 @@
-"""Tests for dataenginex.core.project_plugins.load_project_plugins."""
+"""Tests for dataenginex.domains.plugins.loader.load_project_plugins."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from dataenginex.core.project_plugins import load_project_plugins
+from dataenginex.domains.plugins.loader import load_project_plugins
 
 
 def test_no_plugins_dir_returns_empty_list(tmp_path: Path) -> None:

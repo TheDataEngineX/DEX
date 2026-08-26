@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 
 import pytest
 
-from dataenginex.core.registry import BackendRegistry
+from dataenginex.runtime.registry import BackendRegistry
 
 
 class BaseWidget(ABC):

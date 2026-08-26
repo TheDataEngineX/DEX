@@ -1,8 +1,8 @@
-"""Tests for dataenginex.core.retry."""
+"""Tests for dataenginex.runtime.retry."""
 
 from __future__ import annotations
 
-from dataenginex.core.retry import retry
+from dataenginex.runtime.retry import retry
 
 
 class TestRetry:

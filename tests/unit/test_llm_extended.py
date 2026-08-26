@@ -1,10 +1,10 @@
-"""Extended tests for dataenginex.ai.llm — providers, config, and factory."""
+"""Extended tests for dataenginex.domains.ai.llm — providers, config, and factory."""
 
 from __future__ import annotations
 
 import pytest
 
-from dataenginex.ai.llm import (
+from dataenginex.domains.ai.llm import (
     ChatMessage,
     LLMConfig,
     LLMProvider,
@@ -152,7 +152,7 @@ class TestVLLMProvider:
         assert p is not None
 
     def test_is_openai_compatible_subclass(self) -> None:
-        from dataenginex.ai.llm import OpenAICompatibleProvider
+        from dataenginex.domains.ai.llm import OpenAICompatibleProvider
 
         assert isinstance(VLLMProvider(), OpenAICompatibleProvider)
 

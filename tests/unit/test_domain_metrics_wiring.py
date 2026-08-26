@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from prometheus_client import REGISTRY
 
-from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
-from dataenginex.ai.tools import ToolRegistry, ToolSpec
-from dataenginex.ml.drift import DriftDetector  # noqa: F401 — ensures registration
-from dataenginex.orchestration.scheduler import DriftMonitorConfig, DriftScheduler
+from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
+from dataenginex.domains.ai.tools import ToolRegistry, ToolSpec
+from dataenginex.domains.ml.drift import DriftDetector  # noqa: F401 — ensures registration
 
 
 def _sample_value(metric: str, labels: dict[str, str]) -> float:
@@ -50,7 +49,7 @@ class TestAgentRuntimeMetrics:
                 self._count = 0
 
             def chat(self, messages):  # type: ignore[no-untyped-def]
-                from dataenginex.ai.llm import LLMResponse
+                from dataenginex.domains.ai.llm import LLMResponse
 
                 self._count += 1
                 if self._count == 1:
@@ -64,32 +63,3 @@ class TestAgentRuntimeMetrics:
         asyncio.run(agent.run("go"))
         after = _sample_value("dex_ai_tool_calls_total", {"tool": "echo", "status": "ok"})
         assert after >= before + 1
-
-
-class TestDriftSchedulerEmitsDexGauge:
-    def test_execute_check_sets_dex_drift_score(self) -> None:
-        scheduler = DriftScheduler()
-        config = DriftMonitorConfig(
-            model_name="wiretest-model",
-            reference_data={"feat_a": [0.0] * 50},
-            check_interval_seconds=1.0,
-        )
-        scheduler.register(config, data_fn=lambda: {"feat_a": [1.0] * 50})
-        scheduler.run_check("wiretest-model")
-
-        value = _sample_value(
-            "dex_ml_drift_score",
-            {"pipeline": "wiretest-model", "feature": "feat_a", "method": "psi"},
-        )
-        # Equal-width binning on constant-reference data collapses to zero PSI,
-        # but the gauge must have been published at all (sample exists).
-        assert value >= 0.0
-        # Proof of publish: sample must be present
-        found = False
-        for family in REGISTRY.collect():
-            if family.name == "dex_ml_drift_score":
-                for sample in family.samples:
-                    if sample.labels.get("pipeline") == "wiretest-model":
-                        found = True
-                        break
-        assert found, "dex_ml_drift_score was not published by the scheduler"

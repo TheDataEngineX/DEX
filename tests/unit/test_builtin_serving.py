@@ -7,9 +7,9 @@ from typing import Any
 
 import pytest
 
-from dataenginex.ml.registry import ModelArtifact, ModelRegistry, ModelStage
-from dataenginex.ml.serving_engine.builtin import BuiltinServingEngine
-from dataenginex.ml.training import SklearnTrainer
+from dataenginex.domains.ml.registry import ModelArtifact, ModelRegistry, ModelStage
+from dataenginex.domains.ml.serving_engine.builtin import BuiltinServingEngine
+from dataenginex.domains.ml.training import SklearnTrainer
 
 
 class _DummyEstimator:

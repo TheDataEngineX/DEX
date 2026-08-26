@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from dataenginex.lakehouse.catalog import CatalogEntry, DataCatalog
-from dataenginex.lakehouse.partitioning import DatePartitioner, HashPartitioner
-from dataenginex.lakehouse.storage import JsonStorage, ParquetStorage
+from dataenginex.domains.data.catalog import CatalogEntry, DataCatalog
+from dataenginex.providers.object_store.partitioning import DatePartitioner, HashPartitioner
+from dataenginex.providers.object_store.storage import JsonStorage, ParquetStorage
 
 # ============================================================================
 # JsonStorage

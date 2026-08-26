@@ -73,21 +73,32 @@ ______________________________________________________________________
 
 ```text
 src/dataenginex/
+├── ai/                 # LLM providers, routing, agents, retrieval, tools, memory, workflows
+├── api/                # Pydantic response models, GraphQL schema (no HTTP server)
+├── application/        # Domain services (governance, projects, runs, resources)
+├── bootstrap/          # Engine wiring and startup
 ├── cli/                # `dex` CLI: validate, version, init
-├── config/             # dex.yaml schema, loader
-├── core/               # Base ABCs, registry, exceptions
+├── config/             # dex.yaml schema, loader, env-var resolution
+├── core/               # Core abstractions and shared utilities
+├── data/               # Connectors (CSV, Parquet, DuckDB, REST, HTTP, Kafka), transforms
+├── domains/            # Domain logic (ai, analytics, data, execution, governance, ml, plugins, security)
+├── duckdb/             # DuckDB connection and helpers
 ├── engine.py           # DexEngine — entry point
-├── store.py            # DexStore — SQLite (WAL) persistence
-├── api/                # Pydantic response models (no HTTP server)
-├── data/               # Connectors, pipeline runner, transforms, quality
-├── ml/                 # Classical ML: training, registry, serving, drift
-├── ai/                 # LLM providers, agents, RAG, vector store, memory
-├── orchestration/      # Scheduler, background workers
+├── engines/            # Engine implementations and registry (DuckDB, Spark, base)
+├── foundation/         # Base ABCs, plugin contracts, errors, events, resources
+├── interfaces/         # Gateway, embedded, external service interfaces
+├── lakehouse/          # Bronze/Silver/Gold lakehouse storage and catalog
 ├── middleware/         # structlog, Prometheus metrics
-├── lakehouse/          # Storage backends, catalog, partitioning
-├── warehouse/          # Transforms, lineage
+├── ml/                 # ML training, registry, serving, drift, features
+├── orchestration/      # Scheduler, background workers, queue backends
+├── orm/                # SQLAlchemy ORM models
+├── plugins/            # Entry-point plugin discovery
+├── providers/          # Backend implementations (connectors, vector, tracking)
+├── runtime/            # Compiler, registry, ML runtime, sandbox
 ├── secops/             # PII detection, masking, audit
-└── plugins/            # Entry-point discovery
+├── spark/              # PySpark connector (SQL, streaming, ML, catalog, lineage)
+├── store.py            # DexStore — DuckDB (WAL) persistence
+└── warehouse/          # Warehouse operations
 ```
 
 ______________________________________________________________________
@@ -103,8 +114,6 @@ uv run poe lint-fix           # auto-fix lint issues
 dex validate dex.yaml         # validate a config file
 dex version                   # show version + environment
 ```
-
-See [docs/development.md](docs/development.md) for the full setup.
 
 ______________________________________________________________________
 
@@ -128,12 +137,9 @@ ______________________________________________________________________
 
 | Guide | Description |
 | --- | --- |
-| [Quickstart](docs/quickstart.md) | Get running in 5 minutes |
-| [Architecture](docs/architecture.md) | System design and patterns |
-| [Development](docs/development.md) | Local setup and workflow |
-| [API Reference](docs/api-reference/index.md) | Module-by-module reference |
 | [CHANGELOG](CHANGELOG.md) | Release history |
+| [Release Notes](src/dataenginex/RELEASE_NOTES.md) | Package release details |
 
 ______________________________________________________________________
 
-**License:** MIT • **Python:** 3.13+ • **Status:** Pre-1.0 • **Version:** 0.5.2
+**License:** MIT • **Python:** 3.13+ • **Status:** Pre-1.0 • **Version:** 0.7.0

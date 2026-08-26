@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from dataenginex.data.pipeline.dag import (
+from dataenginex.domains.data.pipeline.dag import (
     build_dag,
     downstream_of,
     resolve_execution_order,

@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 deltalake = pytest.importorskip("deltalake")
-from dataenginex.lakehouse.storage import DeltaStorage  # noqa: E402
+from dataenginex.providers.object_store.storage import DeltaStorage  # noqa: E402
 
 
 def test_write_tolerates_new_field_in_later_batch(tmp_path: Path) -> None:

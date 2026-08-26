@@ -11,7 +11,7 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from dataenginex.ai.tools.builtin import _make_lakehouse_query, _referenced_table_names
+from dataenginex.domains.ai.tools.builtin import _make_lakehouse_query, _referenced_table_names
 
 
 def _write_bronze_table(lakehouse_dir: Path, name: str, rows: list[dict[str, object]]) -> None:

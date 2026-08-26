@@ -1,10 +1,10 @@
-"""Tests for dataenginex.ml.serving — ModelServer and related classes."""
+"""Tests for dataenginex.domains.ml.serving — ModelServer and related classes."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from dataenginex.ml.serving import ModelServer, PredictionRequest, PredictionResponse
+from dataenginex.domains.ml.serving import ModelServer, PredictionRequest, PredictionResponse
 
 
 class _FakeModel:

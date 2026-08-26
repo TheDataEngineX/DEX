@@ -5,7 +5,7 @@ from __future__ import annotations
 import duckdb
 import pytest
 
-from dataenginex.data.quality.gates import ColumnSpec, check_quality
+from dataenginex.domains.analytics.quality.gates import ColumnSpec, check_quality
 
 
 @pytest.fixture()

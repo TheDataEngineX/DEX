@@ -7,7 +7,7 @@ from collections.abc import Generator
 import duckdb
 import pytest
 
-from dataenginex.data.transforms.sql import (
+from dataenginex.domains.analytics.transforms.sql import (
     AggregateTransform,
     CastTransform,
     DeduplicateTransform,

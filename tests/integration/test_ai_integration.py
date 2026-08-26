@@ -6,12 +6,13 @@ from typing import Any
 
 import pytest
 
-from dataenginex.ai.memory.base import MemoryEntry, ShortTermMemory
-from dataenginex.ai.routing.router import BaseProvider, ModelRouter
-from dataenginex.ai.runtime.executor import AgentConfig, AgentExecutor
-from dataenginex.ai.tools import ToolRegistry, ToolSpec
-from dataenginex.ai.tools.builtin import register_builtin_tools
-from dataenginex.ai.workflows.dag import AgentDAG
+from dataenginex.domains.ai.memory.base import MemoryEntry, ShortTermMemory
+from dataenginex.domains.ai.providers import BaseProvider
+from dataenginex.domains.ai.runtime.executor import AgentConfig, AgentExecutor
+from dataenginex.domains.ai.tools import ToolRegistry, ToolSpec
+from dataenginex.domains.ai.tools.builtin import register_builtin_tools
+from dataenginex.domains.ai.workflows.dag import AgentDAG
+from dataenginex.providers.model.router import ModelRouter
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -116,13 +117,13 @@ class TestBuiltinTools:
         register_builtin_tools()
 
     def test_echo_tool_returns_message(self) -> None:
-        from dataenginex.ai.tools import tool_registry
+        from dataenginex.domains.ai.tools import tool_registry
 
         result = tool_registry.call("echo", message="hello world")
         assert result == "hello world"
 
     def test_list_tools_returns_registered_names(self) -> None:
-        from dataenginex.ai.tools import tool_registry
+        from dataenginex.domains.ai.tools import tool_registry
 
         tools = tool_registry.call("list_tools")
         assert "echo" in tools
@@ -130,7 +131,7 @@ class TestBuiltinTools:
         assert "list_tools" in tools
 
     def test_query_tool_runs_sql(self) -> None:
-        from dataenginex.ai.tools import tool_registry
+        from dataenginex.domains.ai.tools import tool_registry
 
         rows = tool_registry.call("query", sql="SELECT 1 AS n")
         assert isinstance(rows, list)
@@ -162,7 +163,7 @@ class TestBuiltinTools:
 class TestBuiltinAgentRuntimeNoLLM:
     @pytest.mark.asyncio
     async def test_run_without_llm_echoes_message(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         agent = BuiltinAgentRuntime(llm=None)
         result = await agent.run("Hello, agent!")
@@ -172,7 +173,7 @@ class TestBuiltinAgentRuntimeNoLLM:
 
     @pytest.mark.asyncio
     async def test_history_is_tracked(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         agent = BuiltinAgentRuntime(llm=None)
         await agent.run("first message")
@@ -181,7 +182,7 @@ class TestBuiltinAgentRuntimeNoLLM:
 
     @pytest.mark.asyncio
     async def test_clear_history(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         agent = BuiltinAgentRuntime(llm=None)
         await agent.run("message")
@@ -190,7 +191,7 @@ class TestBuiltinAgentRuntimeNoLLM:
 
     @pytest.mark.asyncio
     async def test_multiple_messages_accumulate_history(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         agent = BuiltinAgentRuntime(llm=None)
         await agent.run("first")
@@ -222,7 +223,7 @@ class _MockLLM:
 class TestBuiltinAgentRuntimeWithMockLLM:
     @pytest.mark.asyncio
     async def test_final_answer_returned(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         llm = _MockLLM(["ANSWER: The answer is 42"])
         agent = BuiltinAgentRuntime(llm=llm)
@@ -232,7 +233,7 @@ class TestBuiltinAgentRuntimeWithMockLLM:
 
     @pytest.mark.asyncio
     async def test_tool_call_increments_tool_calls(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         register_builtin_tools()
         llm = _MockLLM(
@@ -247,7 +248,7 @@ class TestBuiltinAgentRuntimeWithMockLLM:
 
     @pytest.mark.asyncio
     async def test_max_iterations_respected(self) -> None:
-        from dataenginex.ai.agents.builtin import BuiltinAgentRuntime
+        from dataenginex.domains.ai.agents.builtin import BuiltinAgentRuntime
 
         # LLM never returns ANSWER — always does tool calls
         register_builtin_tools()
@@ -266,7 +267,7 @@ class TestBuiltinAgentRuntimeWithMockLLM:
 class TestAgentExecutor:
     def _make_executor(self, provider: BaseProvider) -> AgentExecutor:
         register_builtin_tools()
-        from dataenginex.ai.tools import tool_registry
+        from dataenginex.domains.ai.tools import tool_registry
 
         config = AgentConfig(name="test", model="mock", max_iterations=5)
         memory = ShortTermMemory()
@@ -294,7 +295,7 @@ class TestAgentExecutor:
     def test_memory_populated_after_run(self) -> None:
         memory = ShortTermMemory()
         register_builtin_tools()
-        from dataenginex.ai.tools import tool_registry
+        from dataenginex.domains.ai.tools import tool_registry
 
         config = AgentConfig(name="test", model="mock", max_iterations=5)
         executor = AgentExecutor(
@@ -332,7 +333,7 @@ class TestAgentExecutor:
 
 class TestAgentDAG:
     def test_single_node_workflow(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         dag.add_node("extract", AgentConfig(name="extract", model="mock"))
@@ -342,7 +343,7 @@ class TestAgentDAG:
         assert results["extract"]  # non-empty output
 
     def test_two_node_chain_passes_output(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         outputs: list[str] = []
 
@@ -367,7 +368,7 @@ class TestAgentDAG:
         assert "processed" in outputs[-1]
 
     def test_three_node_sequential_chain(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         for name in ("a", "b", "c"):
@@ -382,7 +383,7 @@ class TestAgentDAG:
         assert set(results.keys()) == {"a", "b", "c"}
 
     def test_cycle_detection_raises_value_error(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         dag.add_node("x", AgentConfig(name="x", model="mock"))
@@ -394,7 +395,7 @@ class TestAgentDAG:
             dag.execute(initial_input="test")
 
     def test_validate_acyclic_dag_returns_true(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -403,7 +404,7 @@ class TestAgentDAG:
         assert dag.validate() is True
 
     def test_validate_cyclic_dag_returns_false(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         dag.add_node("a", AgentConfig(name="a", model="mock"))
@@ -413,7 +414,7 @@ class TestAgentDAG:
         assert dag.validate() is False
 
     def test_node_without_provider_gets_placeholder(self) -> None:
-        from dataenginex.ai.runtime.executor import AgentConfig
+        from dataenginex.domains.ai.runtime.executor import AgentConfig
 
         dag = AgentDAG()
         dag.add_node("orphan", AgentConfig(name="orphan", model="mock"))

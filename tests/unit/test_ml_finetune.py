@@ -1,4 +1,4 @@
-"""Tests for SentenceTransformerFinetuneTrainer (dataenginex.ml.training).
+"""Tests for SentenceTransformerFinetuneTrainer (dataenginex.domains.ml.training).
 
 Kept in its own module (rather than test_ml.py) because test_ml.py has a
 module-level ``pytest.importorskip("torch")`` guard for TestPyTorchTrainer,
@@ -21,7 +21,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from dataenginex.ml.training import SentenceTransformerFinetuneTrainer, train_experiment
+from dataenginex.domains.ml.training import SentenceTransformerFinetuneTrainer, train_experiment
 
 
 class _FakeSentenceTransformer:
@@ -85,6 +85,18 @@ def mock_sentence_transformers(monkeypatch: pytest.MonkeyPatch) -> None:
     torch_utils_mod = types.ModuleType("torch.utils")
     torch_utils_data_mod = types.ModuleType("torch.utils.data")
     torch_utils_data_mod.DataLoader = _FakeDataLoader  # type: ignore[attr-defined]
+
+    class _FakeDataset:
+        def __class_getitem__(cls, _item: Any) -> type:
+            return cls
+        def __init__(self, items: Any) -> None:
+            self._items = items
+        def __getitem__(self, idx: int) -> Any:
+            return self._items[idx]
+        def __len__(self) -> int:
+            return len(self._items)
+
+    torch_utils_data_mod.Dataset = _FakeDataset  # type: ignore[attr-defined]
     torch_utils_mod.data = torch_utils_data_mod  # type: ignore[attr-defined]
     torch_mod.utils = torch_utils_mod  # type: ignore[attr-defined]
 

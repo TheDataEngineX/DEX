@@ -29,7 +29,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-import pika  # type: ignore[import-untyped]
+import pika
 import structlog
 
 logger = structlog.get_logger()

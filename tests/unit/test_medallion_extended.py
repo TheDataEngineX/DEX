@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dataenginex.core.medallion_architecture import (
+from dataenginex.domains.data.medallion import (
     DataLayer,
     DataLineage,
     LayerConfiguration,

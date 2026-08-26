@@ -5,7 +5,7 @@ from __future__ import annotations
 import duckdb
 import pytest
 
-from dataenginex.data.transforms.sql import ExplodeTransform, JsonNormalizeTransform
+from dataenginex.domains.analytics.transforms.sql import ExplodeTransform, JsonNormalizeTransform
 
 
 @pytest.fixture
