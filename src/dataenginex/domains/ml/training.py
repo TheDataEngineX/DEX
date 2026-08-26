@@ -687,7 +687,7 @@ class SentenceTransformerFinetuneTrainer(BaseTrainer):
             for (a, b), label in zip(X_train, y_train, strict=True)
         ]
 
-        class _ListDataset(TorchDataset):
+        class _ListDataset(TorchDataset[Any]):
             def __init__(self, items: list[InputExample]) -> None:
                 self._items = items
             def __getitem__(self, idx: int) -> InputExample:
