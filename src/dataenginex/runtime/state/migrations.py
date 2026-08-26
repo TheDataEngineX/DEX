@@ -651,11 +651,27 @@ _INTERACTIVE: Final[tuple[str, ...]] = (
     "CREATE INDEX idx_interactive_results_expiry ON interactive_results(expires_at)",
 )
 
+_WORKFLOW_STEPS = (
+    """
+    CREATE TABLE IF NOT EXISTS workflow_steps (
+        run_id        TEXT NOT NULL,
+        step_name     TEXT NOT NULL,
+        step_type     TEXT NOT NULL,
+        state         TEXT NOT NULL,
+        error         TEXT,
+        started_at    TEXT,
+        completed_at  TEXT,
+        PRIMARY KEY (run_id, step_name)
+    )
+    """,
+)
+
 
 MIGRATIONS: Final[tuple[Migration, ...]] = (
     Migration(1, "initial_control_schema", _INITIAL),
     Migration(2, "stream_dead_letters", _STREAMS),
     Migration(3, "interactive_workloads", _INTERACTIVE),
+    Migration(4, "workflow_steps", _WORKFLOW_STEPS),
 )
 
 

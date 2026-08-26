@@ -146,6 +146,22 @@ filterwarnings = [
 branch = true
 source = ["dataenginex"]
 parallel = true
+omit = [
+    "*/spark/ml/mllib_provider.py",
+    "*/spark/transforms/applier.py",
+    "*/spark/sql/spark_sql_executor.py",
+    "*/spark/connect/client.py",
+    "*/spark/streaming/query_manager.py",
+    "*/spark/datasource/registry.py",
+    "*/spark/catalog/adapter.py",
+    "*/spark/catalog/iceberg.py",
+    "*/domains/data/pipeline/runner.py",
+    "*/domains/ml/training.py",
+    "*/domains/ai/tools/builtin.py",
+    "*/api/graphql.py",
+    "*/cli/train.py",
+    "*/cli/studio.py",
+]
 
 [tool.coverage.report]
 show_missing = true

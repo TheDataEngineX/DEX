@@ -85,9 +85,10 @@ class WorkflowCoordinator:
 
             try:
                 self._execute_step(step, project_id, revision_id)
-                step.state = StepState.COMPLETED
-                completed.add(step.name)
-                results[step.name] = StepState.COMPLETED
+                if step.state != StepState.WAITING_APPROVAL:
+                    step.state = StepState.COMPLETED
+                    completed.add(step.name)
+                results[step.name] = step.state
                 self._record_step_complete(run_id, step)
             except Exception as e:
                 step.state = StepState.FAILED
