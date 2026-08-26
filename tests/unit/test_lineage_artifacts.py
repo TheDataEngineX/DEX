@@ -223,7 +223,7 @@ def test_openlineage_keeps_dex_facts_in_a_custom_facet(
 
     assert facet["projectId"] == PROJECT
     assert facet["revisionId"] == REVISION
-    assert "api.vendor.com" in facet["transmissions"]
+    assert facet["transmissions"] == ["api.vendor.com"]
 
 
 def test_openlineage_for_an_unknown_run_is_empty(lineage: LineageService) -> None:

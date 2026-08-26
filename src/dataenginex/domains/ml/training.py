@@ -670,6 +670,7 @@ class SentenceTransformerFinetuneTrainer(BaseTrainer):
         """
         from sentence_transformers import InputExample, SentenceTransformer
         from torch.utils.data import DataLoader
+        from torch.utils.data import Dataset as TorchDataset
 
         if not X_train:
             raise ValueError("X_train (training pairs) must not be empty")
@@ -686,7 +687,17 @@ class SentenceTransformerFinetuneTrainer(BaseTrainer):
             for (a, b), label in zip(X_train, y_train, strict=True)
         ]
 
-        loader: DataLoader[InputExample] = DataLoader(examples, shuffle=True, batch_size=batch_size)
+        class _ListDataset(TorchDataset[InputExample]):
+            def __init__(self, items: list[InputExample]) -> None:
+                self._items = items
+            def __getitem__(self, idx: int) -> InputExample:
+                return self._items[idx]
+            def __len__(self) -> int:
+                return len(self._items)
+
+        loader: DataLoader[InputExample] = DataLoader(
+            _ListDataset(examples), shuffle=True, batch_size=batch_size,
+        )
         loss_fn = self._build_loss(self._model)
 
         start = time.perf_counter()

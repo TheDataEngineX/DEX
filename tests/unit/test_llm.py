@@ -161,7 +161,7 @@ class TestOpenAICompatibleProvider:
     def test_init(self) -> None:
         provider = OpenAICompatibleProvider(api_key="test-key", model="gpt-4o-mini")
         assert provider.config.model == "gpt-4o-mini"
-        assert "api.openai.com" in provider.base_url
+        assert provider.base_url == "https://api.openai.com"
 
     def test_custom_base_url(self) -> None:
         provider = OpenAICompatibleProvider(
@@ -169,7 +169,7 @@ class TestOpenAICompatibleProvider:
             base_url="https://api.groq.com/openai",
             model="llama3-8b",
         )
-        assert "groq.com" in provider.base_url
+        assert provider.base_url == "https://api.groq.com/openai"
         assert provider.config.model == "llama3-8b"
 
     def test_headers_contain_auth(self) -> None:
