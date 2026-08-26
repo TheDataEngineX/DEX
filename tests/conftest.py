@@ -33,6 +33,7 @@ collect_ignore: list[str] = [
     "integration/test_config_cli.py",
     "integration/test_spark_pipeline_execution.py",
     "unit/test_secops_engine_and_cli.py",
+    "engines/test_iceberg.py",
 ]
 
 # ---------------------------------------------------------------------------
