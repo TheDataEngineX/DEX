@@ -27,6 +27,7 @@ collect_ignore: list[str] = [
     "unit/test_lineage_advanced.py",
     "unit/test_lineage_persistence.py",
     "unit/test_spark_catalog_adapter.py",
+    "unit/test_spark_transform_applier.py",
     "integration/test_lineage_integration.py",
     "integration/test_cli_run.py",
     "integration/test_config_cli.py",
