@@ -68,7 +68,7 @@ dev = [
 spark = ["pyspark>=4.2.0", "delta-spark>=4.0.0", "pyiceberg>=0.11.0"]
 notebook = ["pandas>=2.0.0"]
 ml = ["scikit-learn>=1.9.0", "sentence-transformers>=5.6.0"]
-tracking = ["mlflow>=3.14.0", "pandas>=2.0.0,<3"]
+tracking = ["mlflow>=3.14.0", "pandas>=2.0.0,<4"]
 catalog = ["pyhive[hive]>=0.7.0", "thrift-sasl>=0.4.0"]
 lineage = ["openlineage-python>=1.30.0"]
 
